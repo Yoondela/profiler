@@ -3,7 +3,7 @@ const express = require('express');
 const connectDB = require('./config/db');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3000;
 
 connectDB();
 
@@ -17,6 +17,8 @@ app.get('/', (req, res) => {
   res.send('Profiler backend is live');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running on http://localhost:${PORT}`);
+// });
+
+module.exports = app;
