@@ -18,9 +18,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@auth0/auth0-react": "^2.3.0",
     "@faker-js/faker": "^9.8.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-jwt": "^8.5.1",
+    "install": "^0.13.0",
+    "jwks-rsa": "^3.2.0",
     "mongodb": "^6.17.0",
     "mongoose": "^8.15.1"
   },

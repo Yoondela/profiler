@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Profile = require('../models/Profile');
 
+const authMiddleware = require('../middleware/auth')
+
 router.post('/', async (req, res) => {
   try {
     const profile = new Profile(req.body);
@@ -20,6 +22,58 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: err.message});
   }
 });
+
+router.get('/me/:userId', async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user: req.params.userId }).populate('user', 'name email');
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    res.status(200).json(profile);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+const User = require('../models/User'); // make sure this is at the top
+
+router.get('/me/mail/:email', async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+
+    // Step 1: find user
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Step 2: find profile linked to user._id
+    const profile = await Profile.findOne({ user: user._id });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    // Step 3: format clean response
+    res.status(200).json({
+      userAccount: {
+        user: {
+          name: user.name,
+          email: user.email
+        },
+        profile: {
+          bio: profile.bio,
+          phone: profile.phone
+        }
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 router.get('/:id', async (req, res) => {
   try {
