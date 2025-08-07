@@ -6,10 +6,10 @@ const authMiddleware = jwt({
       cache: true,
       rateLimit: true,
       jwksRequestsPerMinute: 5,
-      jwksUri: 'https://dev-22potfdnbjbkavt5.us.auth0.com/api/v2/',
+      jwksUri: 'https://dev-0abaxu1ggacd3wwr.us.auth0.com/api/v2/',
     }),
-    audience: 'NsgXrww8zrrelAXHXrIUwqp8M4vEYeMq',
-    issuer: 'https://dev-22potfdnbjbkavt5.us.auth0.com/',
+    audience: 'https://dev-0abaxu1ggacd3wwr.us.auth0.com/api/v2/',
+    issuer: 'dev-0abaxu1ggacd3wwr.us.auth0.com',
     algorithms: ['RS256'],
   });
   

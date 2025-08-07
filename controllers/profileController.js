@@ -54,6 +54,11 @@ const getProfileByEmail = async (req, res) => {
         profile: {
           bio: profile.bio,
           phone: profile.phone,
+          address: profile.address,
+          preferredContactMethod: profile.preferredContactMethod,
+          notificationSettings: profile.notificationSettings,
+          savedAddresses: profile.savedAddresses,
+          createdAt: profile.createdAt,
         },
       },
     });
@@ -92,6 +97,60 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const updateProfileByEmail = async (req, res) => {
+  try {
+    const email = req.params.email;
+
+    console.log("This is the address", req.body.address);
+
+    // Step 1: Find user by email
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Step 2: Find profile by user ID
+    const profile = await Profile.findOne({ user: user._id });
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    // Step 3: Optional name update logic
+    const shouldReplaceName = (
+      req.body.name !== undefined &&
+      req.body.name !== user.name &&
+      !req.body.name.includes('user_')
+    );
+
+    if (shouldReplaceName) {
+      user.name = req.body.name;
+      await user.save(); // 💾 Important to persist the name change
+    }
+
+    // Step 4: Update profile fields if present
+    if (req.body.bio !== undefined) profile.bio = req.body.bio;
+    if (req.body.phone !== undefined) profile.phone = req.body.phone;
+    if (req.body.address !== undefined) profile.address = req.body.address;
+    if (req.body.preferredContactMethod !== undefined) {
+      profile.preferredContactMethod = req.body.preferredContactMethod;
+    }
+    if (req.body.notificationSettings !== undefined) {
+      profile.notificationSettings = req.body.notificationSettings;
+    }
+    if (req.body.savedAddresses !== undefined) {
+      profile.savedAddresses = req.body.savedAddresses;
+    }
+
+    // Step 5: Recalculate profile completion
+    profile.profileCompletion = calculateProfileCompletion(profile);
+
+    // Step 6: Save profile
+    await profile.save();
+
+    res.status(200).json(profile);
+  } catch (err) {
+    console.error('Error updating profile by email:', err);
+    res.status(400).json({ message: err.message });
+  }
+};
+
+
 // Delete profile
 const deleteProfile = async (req, res) => {
   try {
@@ -109,5 +168,6 @@ module.exports = {
   getProfileByEmail,
   getProfileById,
   updateProfile,
+  updateProfileByEmail,
   deleteProfile,
 };

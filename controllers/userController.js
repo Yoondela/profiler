@@ -1,22 +1,32 @@
-// controllers/userController.js
+// backend/controllers/userController.js
+
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 const calculateProfileCompletion = require('../utils/calculateProfileCompletion');
 
+function generateUsername(auth0Id) {
+  return `user_${auth0Id.slice(-6)}`;
+}
+
 const createUser = async (req, res) => {
   console.log('Running POST method');
-  try {
-    const { name, email } = req.body;
 
-    // 🔍 Check if user exists
+  try {
+    const { name, email, sub: auth0Id } = req.body;
+
+    const isDefaultName = name === email;
+    const defaultName = isDefaultName ? generateUsername(auth0Id) : name;
+
     let user = await User.findOne({ email });
 
     if (!user) {
-      user = new User({ name, email });
+      user = new User({
+        name: defaultName,
+        email,
+      });
       await user.save();
     }
 
-    // 🔍 Check if profile exists
     let profile = await Profile.findOne({ user: user._id });
 
     if (!profile) {
@@ -39,7 +49,9 @@ const createUser = async (req, res) => {
     }
 
     res.status(201).json({ newUser: user, profile });
+
   } catch (err) {
+    console.error('Create user error:', err.message);
     res.status(400).json({ message: err.message });
   }
 };

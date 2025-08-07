@@ -8,6 +8,7 @@ const {
   getProfileByEmail,
   getProfileById,
   updateProfile,
+  updateProfileByEmail,
   deleteProfile
 } = require('../controllers/profileController');
 
@@ -17,6 +18,7 @@ router.get('/me/:userId', getProfileByUserId);
 router.get('/me/mail/:email', getProfileByEmail);
 router.get('/:id', getProfileById);
 router.put('/:id', updateProfile);
+router.patch('/update-by-mail/:email', updateProfileByEmail);
 router.delete('/:id', deleteProfile);
 
 module.exports = router;
