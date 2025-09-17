@@ -3,6 +3,7 @@ const app = require('../index');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
+const calculateProfileCompletion = require("../utils/calculateProfileCompletion");
 
 jest.setTimeout(10000); // in case anything is slow
 
@@ -75,6 +76,58 @@ describe('POST /api/users', () => {
   afterAll(async () => {
     await mongoose.connection.collection('users').deleteMany({});
     await mongoose.connection.collection('profiles').deleteMany({});
-    await mongoose.connection.close();
+    // await mongoose.connection.close();
   });
 });
+
+describe('POST /api/profiles', () => {
+  let user;
+
+  beforeAll(async () => {
+    // ensure a clean slate
+    await Profile.deleteMany({});
+    await User.deleteMany({});
+    // create a user to attach the profile to (Profile model usually references a user)
+    const uniqueEmail = `profileowner${Date.now()}@test.com`;
+    user = new User({ name: 'Profile Owner', email: uniqueEmail });
+    await user.save();
+  });
+
+  it('should create a profile and compute profileCompletion', async () => {
+    const payload = {
+      user: String(user._id),        // send user id (string is fine over HTTP)
+      bio: 'Testing profile creation',
+      phone: '0712345678',
+      address: '1 Test Lane',
+      preferredContactMethod: 'sms',
+      notificationSettings: { email: true, sms: true }
+    };
+
+    const expectedCompletion = calculateProfileCompletion(payload);
+
+    const res = await request(app)
+      .post('/api/profiles')
+      .send(payload);
+
+    // controller should return 201 and the saved profile
+    expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('_id');
+    expect(String(res.body.user)).toBe(String(user._id));
+    expect(res.body).toHaveProperty('bio', payload.bio);
+    expect(res.body).toHaveProperty('phone', payload.phone);
+    expect(res.body).toHaveProperty('profileCompletion', expectedCompletion);
+
+    // double-check DB actually got the document
+    const saved = await Profile.findById(res.body._id).lean();
+    expect(saved).not.toBeNull();
+    expect(String(saved.user)).toBe(String(user._id));
+    expect(saved.profileCompletion).toBe(expectedCompletion);
+  });
+
+  afterAll(async () => {
+    // clean up and close connection
+    await Profile.deleteMany({});
+    await User.deleteMany({});
+    await mongoose.connection.close();
+  });
+})
