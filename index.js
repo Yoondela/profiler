@@ -8,13 +8,21 @@ const connectDB = require('./config/db');
 const app = express();
 
 const cors = require('cors');
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+}));
+
+const checkJwt = require('./middleware/auth');
+app.use(checkJwt);
 
 connectDB();
 
 app.use(express.json());
 
 const userRoutes = require ('./routes/userRoutes');
+app.use('/api', userRoutes);
 app.use('/api/users', userRoutes);
 
 const profileRoutes = require('./routes/profileRoutes');
