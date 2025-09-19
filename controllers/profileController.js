@@ -5,6 +5,7 @@ const calculateProfileCompletion = require('../utils/calculateProfileCompletion'
 // Create profile
 const createProfile = async (req, res) => {
   try {
+    console.log('creating profile from data', req.body);
     const profileData = req.body;
     profileData.profileCompletion = calculateProfileCompletion(profileData);
 

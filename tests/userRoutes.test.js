@@ -36,47 +36,69 @@ describe('POST /api/users', () => {
     expect(response.statusCode).toBe(201);
     expect(response.body.newUser.name).toContain('user_');
   });
-  
-  describe('DELETE /api/users/:id', () => {
-    let userId;
-  
-    beforeAll(async () => {
-      // create a user + profile to delete
-      const user = new User({ name: 'Delete Me', email: `deleteme${Date.now()}@test.com` });
-      await user.save();
-  
-      const profile = new Profile({ user: user._id, bio: 'bye' });
-      await profile.save();
-  
-      userId = user._id;
-    });
-  
-    it('should delete user and profile', async () => {
-      const res = await request(app).delete(`/api/users/${userId}`);
-  
-      expect(res.statusCode).toBe(200);
-      expect(res.body.message).toBe('User and profile deleted successfully');
-  
-      const deletedUser = await User.findById(userId);
-      const deletedProfile = await Profile.findOne({ user: userId });
-  
-      expect(deletedUser).toBeNull();
-      expect(deletedProfile).toBeNull();
-    });
-  
-    it('should return 404 if user not found', async () => {
-      const fakeId = new mongoose.Types.ObjectId();
-      const res = await request(app).delete(`/api/users/${fakeId}`);
-  
-      expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe('User not found');
-    });
-  });
+
+  it('should create a profile through create user', async () => {
+    const uniqueEmail = `user${Date.now()}@example.com`;
+
+    const response = await request(app)
+      .post('/api/users')
+      .send({
+        name: 'Yondela',
+        email: uniqueEmail,
+      });
+
+    expect(response.body).toHaveProperty('profile');
+    expect(response.body.profile).toHaveProperty('user');
+    expect(response.body.profile).toHaveProperty('phone');
+    expect(response.body.profile).toHaveProperty('address');
+    expect(response.body.profile).toHaveProperty('bio');
+    expect(response.body.profile).toHaveProperty('preferredContactMethod');
+    expect(response.body.profile).toHaveProperty('notificationSettings');
+    expect(response.body.profile).toHaveProperty('profileCompletion');
+    expect(response.body.profile).toHaveProperty('_id');
+    expect(response.body.profile).toHaveProperty('createdAt');
+  })
 
   afterAll(async () => {
     await mongoose.connection.collection('users').deleteMany({});
     await mongoose.connection.collection('profiles').deleteMany({});
     // await mongoose.connection.close();
+  });
+});
+
+describe('DELETE /api/users/:id', () => {
+  let userId;
+
+  beforeAll(async () => {
+    // create a user + profile to delete
+    const user = new User({ name: 'Delete Me', email: `deleteme${Date.now()}@test.com` });
+    await user.save();
+
+    const profile = new Profile({ user: user._id, bio: 'bye' });
+    await profile.save();
+
+    userId = user._id;
+  });
+
+  it('should delete user and profile', async () => {
+    const res = await request(app).delete(`/api/users/${userId}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe('User and profile deleted successfully');
+
+    const deletedUser = await User.findById(userId);
+    const deletedProfile = await Profile.findOne({ user: userId });
+
+    expect(deletedUser).toBeNull();
+    expect(deletedProfile).toBeNull();
+  });
+
+  it('should return 404 if user not found', async () => {
+    const fakeId = new mongoose.Types.ObjectId();
+    const res = await request(app).delete(`/api/users/${fakeId}`);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe('User not found');
   });
 });
 
