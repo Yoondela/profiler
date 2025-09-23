@@ -1,27 +1,30 @@
+// models/User.js
 const mongoose = require('mongoose');
-const Profile = require('./Profile'); // 🔁 Import Profile model
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+const providerProfileSchema = new mongoose.Schema({
+  servicesOffered: { type: [String], default: [] },
+  bio: { type: String, default: '' },
+  phone: { type: String, default: '' },
+  address: { type: String, default: '' },
+  rating: { type: Number, default: 0 },
+  completedJobs: { type: Number, default: 0 },
+  becameProviderAt: { type: Date, default: null },
+}, { _id: false });
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  roles: {
+    type: [String],
+    enum: ['client', 'provider', 'admin'],
+    default: ['client'],
   },
-  {
-    discriminatorKey: 'role', // tells Mongoose which model type this is
-    collection: 'users',      // all stored in one collection
-  }
-);
+  providerProfile: { type: providerProfileSchema, default: null },
+  createdAt: { type: Date, default: Date.now },
+});
 
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+userSchema.methods.hasRole = function (role) {
+  return this.roles && this.roles.includes(role);
+};
+
+module.exports = mongoose.model('User', userSchema);

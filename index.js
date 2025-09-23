@@ -28,6 +28,9 @@ app.use('/api/users', userRoutes);
 const profileRoutes = require('./routes/profileRoutes');
 app.use('/api/profiles', profileRoutes);
 
+const serviceBookingsRoutes = require('./routes/serviceBookingsRoutes');
+app.use('/api', serviceBookingsRoutes);
+
 app.get('/', (req, res) => {
   res.send('Profiler backend is live');
 });

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const serviceBookingSchema = mongoose.Schema({
+const serviceBookingSchema = new mongoose.Schema({
   client: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -18,7 +18,7 @@ const serviceBookingSchema = mongoose.Schema({
   },
   description: {
     type: String,
-    required: true,
+    required: false,
     minlength: 10,
   },
   status: {
@@ -32,17 +32,20 @@ const serviceBookingSchema = mongoose.Schema({
   },
   forDate: {
     type: Date,
-    reqired: true,
+    required: true,
   },
-  forAdress: {
+  forAddress: {
     type: String,
     required: true,
   },
   note: {
     type: String,
-    default: 'None given'
-  }
-
-});
+    default: 'None given',
+  },
+  amount: {
+    type: Number,
+    default: 0,
+  },
+}, { timestamps: true });
 
 module.exports = mongoose.model('ServiceBooking', serviceBookingSchema);

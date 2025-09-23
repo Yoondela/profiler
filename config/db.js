@@ -5,7 +5,11 @@ const connectDB = async () => {
     const uri = process.env.NODE_ENV === 'test'
     ? process.env.MONGO_URI_TEST
     : process.env.MONGO_URI;
-    const conn = await mongoose.connect(uri);
+    const conn = await mongoose.connect(uri, {
+      useUnifiedTopology: true,
+      ssl: true, // force TLS
+      tlsAllowInvalidCertificates: false,
+    });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
