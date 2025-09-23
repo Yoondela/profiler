@@ -19,11 +19,11 @@ const serviceBookingSchema = new mongoose.Schema({
   description: {
     type: String,
     required: false,
-    minlength: 10,
+    maxlength: 200,
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected', 'completed'],
+    enum: ['pending', 'accepted', 'rejected', 'completed', 'confirmed'],
     default: 'pending',
   },
   bookedAt: {
