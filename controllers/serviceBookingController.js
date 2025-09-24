@@ -76,10 +76,111 @@ const getBookingById = async (req, res) => {
   }
 };
 
+const getUpcomingBookingsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const bookings = await ServiceBooking.find({
+      $or: [{ client: userId }, { provider: userId }],
+      forDate: { $gte: new Date() } // date now or later
+    })
+      .populate('client', 'name email')
+      .populate('provider', 'name email')
+      .sort({ forDate: 1 }); // soonest first
+
+    res.status(200).json(bookings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getPastBookingsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const bookings = await ServiceBooking.find({
+      $or: [{ client: userId }, { provider: userId }],
+      forDate: { $lt: new Date() } // before today
+    })
+      .populate('client', 'name email')
+      .populate('provider', 'name email')
+      .sort({ forDate: -1 }); // most recent first
+
+    res.status(200).json(bookings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update booking
+const updateBookingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
+      new: true, // return the updated doc
+      runValidators: true, // enforce schema validation
+    })
+      .populate('client', 'name email')
+      .populate('provider', 'name email');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    res.status(200).json(booking);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// Update booking (only editable fields)
+const updateBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only allow editable fields
+    const allowedUpdates = [
+      'description',
+      'note',
+      'forDate',
+      'forAddress',
+      'serviceType',
+      'status', // keep status editable too
+    ];
+
+    const updates = {};
+    for (let key of allowedUpdates) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    })
+      .populate('client', 'name email')
+      .populate('provider', 'name email');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    res.status(200).json(booking);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 
 module.exports = { 
     createBooking, 
     getAllServiceBookings,
     getBookingsByUserId,
     getBookingById,
+    getUpcomingBookingsByUser,
+    getPastBookingsByUser,
+    updateBookingStatus,
+    updateBooking,
    };

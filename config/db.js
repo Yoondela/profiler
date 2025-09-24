@@ -6,7 +6,6 @@ const connectDB = async () => {
     ? process.env.MONGO_URI_TEST
     : process.env.MONGO_URI;
     const conn = await mongoose.connect(uri, {
-      useUnifiedTopology: true,
       ssl: true, // force TLS
       tlsAllowInvalidCertificates: false,
     });
