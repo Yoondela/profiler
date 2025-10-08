@@ -7,12 +7,12 @@ const ServiceBooking = require('../models/ServiceBooking');
 jest.setTimeout(20000);
 
 describe('ServiceBooking API', () => {
-    
+
   beforeAll(async () => {
     // create test client
     clientUser = await User.create({
       name: 'Test Client',
-      email: 'client@example.com'
+      email: 'client@example.com',
     });
 
     // create test provider
@@ -24,14 +24,14 @@ describe('ServiceBooking API', () => {
         bio: 'Pro Plumber',
         phone: '0712345678',
         address: '123 Main St',
-        becameProviderAt: new Date()
-      }
+        becameProviderAt: new Date(),
+      },
     });
   });
 
   beforeEach(async () => {
     await mongoose.connection.collection('servicebookings').deleteMany({});
-  })
+  });
 
   afterAll(async () => {
     await mongoose.connection.collection('servicebookings').deleteMany({});
@@ -40,14 +40,14 @@ describe('ServiceBooking API', () => {
 
   it('should create a new service booking', async () => {
     const bookingPayload = {
-        client: clientUser._id.toString(),
-        provider: providerUser._id.toString(),
-        serviceType: 'Plumbing',
-        description: 'Fix leaking kitchen sink',
-        forDate: new Date(),
-        forAddress: '456 Test Lane',
-        note: 'Please bring your own tools'
-      };
+      client: clientUser._id.toString(),
+      provider: providerUser._id.toString(),
+      serviceType: 'Plumbing',
+      description: 'Fix leaking kitchen sink',
+      forDate: new Date(),
+      forAddress: '456 Test Lane',
+      note: 'Please bring your own tools',
+    };
 
     const res = await request(app)
       .post('/api/bookings')
@@ -64,7 +64,7 @@ describe('ServiceBooking API', () => {
     const saved = await ServiceBooking.findById(res.body._id).lean();
     expect(saved).not.toBeNull();
     expect(saved.description).toBe(bookingPayload.description);
-  })
+  });
 
   it('should return all bookings', async () => {
     await ServiceBooking.create([
@@ -75,7 +75,7 @@ describe('ServiceBooking API', () => {
         status: 'pending',
         forDate: new Date(),
         forAddress: '123 Main St',
-        description: 'Fix sink'
+        description: 'Fix sink',
       },
       {
         client: new mongoose.Types.ObjectId(),
@@ -84,17 +84,17 @@ describe('ServiceBooking API', () => {
         status: 'confirmed',
         forDate: new Date(),
         forAddress: '456 Test Ave',
-        description: 'Clean kitchen'
+        description: 'Clean kitchen',
       },
     ]);
-  
+
     const res = await request(app).get('/api/bookings');
 
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBe(2);
     expect(res.body[0]).toHaveProperty('serviceType');
   });
-  
+
   it('should get a booking by id', async () => {
     const booking = await ServiceBooking.create({
       client: new mongoose.Types.ObjectId(),
@@ -104,13 +104,13 @@ describe('ServiceBooking API', () => {
       forDate: new Date(),
       forAddress: '123 Main St',
       description: 'Fix sink',
-    })
+    });
 
     const res = await request(app).get(`/api/bookings/${booking._id}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('_id', booking._id.toString());
-  })
+  });
 
   it('should return 404 if booking not found', async () => {
     const fakeId = new mongoose.Types.ObjectId();
@@ -153,8 +153,8 @@ describe('ServiceBooking API', () => {
     const serviceTypes = res.body.map(b => b.serviceType);
     expect(serviceTypes).toContain('Plumbing');
     expect(serviceTypes).toContain('Cleaning');
-  })
-})
+  });
+});
 
 describe('ServiceBooking API - Get bookings by user', () => {
 
@@ -176,7 +176,7 @@ describe('ServiceBooking API - Get bookings by user', () => {
       description: 'Past booking',
       requestedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       forDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-      forAddress: '123 Past St'
+      forAddress: '123 Past St',
     }).save();
 
     // Create upcoming booking
@@ -187,7 +187,7 @@ describe('ServiceBooking API - Get bookings by user', () => {
       description: 'Upcoming booking',
       requestedAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
       forDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      forAddress: '456 Future Ave'
+      forAddress: '456 Future Ave',
     }).save();
   });
 
@@ -249,7 +249,7 @@ describe('ServiceBooking API - Update a booking', () => {
 
   it('should update a booking status', async () => {
     const res = await request(app)
-    .patch(`/api/bookings/status/${booking._id}`)
+      .patch(`/api/bookings/status/${booking._id}`)
       .send({ status: 'accepted' });
 
     expect(res.statusCode).toBe(200);
@@ -266,7 +266,7 @@ describe('ServiceBooking API - Update a booking', () => {
       forDate: new Date(),
       forAddress: '123 Main St',
     });
- 
+
     const res = await request(app)
       .patch(`/api/bookings/${booking._id}`)
       .send({
@@ -276,7 +276,7 @@ describe('ServiceBooking API - Update a booking', () => {
         forAddress: '456 Elm St',
         serviceType: 'Cleaning',
       });
-  
+
     expect(res.statusCode).toBe(200);
     expect(res.body.description).toBe('Fix leaking bathroom tap');
     expect(res.body.note).toBe('Bring extra washers');

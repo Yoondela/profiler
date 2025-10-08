@@ -39,7 +39,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
 
   try {
     const result = await uploadBufferToCloudinary(req.file.buffer, {
-      folder: 'profile_pics'
+      folder: 'profile_pics',
     });
 
     return res.json({ url: result.secure_url });

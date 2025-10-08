@@ -1,7 +1,10 @@
 require('dotenv').config();
 require('./models/Profile');
 require('./models/ServiceRequest');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
+const swaggerDocument = YAML.load('./swagger.yaml');
 const express = require('express');
 const connectDB = require('./config/db');
 
@@ -9,8 +12,8 @@ const app = express();
 
 const cors = require('cors');
 app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
 
@@ -20,6 +23,8 @@ app.use(checkJwt);
 connectDB();
 
 app.use(express.json());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const userRoutes = require ('./routes/userRoutes');
 app.use('/api', userRoutes);

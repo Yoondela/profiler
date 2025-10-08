@@ -102,7 +102,7 @@ const updateProfileByEmail = async (req, res) => {
   try {
     const email = req.params.email;
 
-    console.log("This is the address", req.body.address);
+    console.log('This is the address', req.body.address);
 
     // Step 1: Find user by email
     const user = await User.findOne({ email });

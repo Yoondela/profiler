@@ -9,7 +9,7 @@ const createBooking = async (req, res) => {
       description,
       forDate,
       forAddress,
-      note
+      note,
     } = req.body;
 
     // create and save booking
@@ -20,7 +20,7 @@ const createBooking = async (req, res) => {
       description,
       forDate,
       forAddress,
-      note
+      note,
     });
 
     await booking.save();
@@ -48,8 +48,8 @@ const getBookingsByUserId = async (req, res) => {
     const bookings = await ServiceBooking.find({
       $or: [
         { client: userId },
-        { provider: userId }
-      ]
+        { provider: userId },
+      ],
     })
       .populate('client', 'name email')
       .populate('provider', 'name email');
@@ -82,7 +82,7 @@ const getUpcomingBookingsByUser = async (req, res) => {
 
     const bookings = await ServiceBooking.find({
       $or: [{ client: userId }, { provider: userId }],
-      forDate: { $gte: new Date() } // date now or later
+      forDate: { $gte: new Date() }, // date now or later
     })
       .populate('client', 'name email')
       .populate('provider', 'name email')
@@ -100,7 +100,7 @@ const getPastBookingsByUser = async (req, res) => {
 
     const bookings = await ServiceBooking.find({
       $or: [{ client: userId }, { provider: userId }],
-      forDate: { $lt: new Date() } // before today
+      forDate: { $lt: new Date() }, // before today
     })
       .populate('client', 'name email')
       .populate('provider', 'name email')
@@ -174,13 +174,13 @@ const updateBooking = async (req, res) => {
 };
 
 
-module.exports = { 
-    createBooking, 
-    getAllServiceBookings,
-    getBookingsByUserId,
-    getBookingById,
-    getUpcomingBookingsByUser,
-    getPastBookingsByUser,
-    updateBookingStatus,
-    updateBooking,
-   };
+module.exports = {
+  createBooking,
+  getAllServiceBookings,
+  getBookingsByUserId,
+  getBookingById,
+  getUpcomingBookingsByUser,
+  getPastBookingsByUser,
+  updateBookingStatus,
+  updateBooking,
+};

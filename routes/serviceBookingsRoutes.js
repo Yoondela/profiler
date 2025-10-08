@@ -1,13 +1,13 @@
 const express = require('express');
-const { 
-    createBooking,
-    getAllServiceBookings,
-    getBookingById,
-    getBookingsByUserId,
-    getUpcomingBookingsByUser,
-    getPastBookingsByUser,
-    updateBookingStatus,
-    updateBooking,
+const {
+  createBooking,
+  getAllServiceBookings,
+  getBookingById,
+  getBookingsByUserId,
+  getUpcomingBookingsByUser,
+  getPastBookingsByUser,
+  updateBookingStatus,
+  updateBooking,
 } = require('../controllers/serviceBookingController');
 const router = express.Router();
 

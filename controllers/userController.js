@@ -39,8 +39,8 @@ const createUser = async (req, res) => {
         notificationSettings: { email: true, sms: true },
         savedAddresses: [
           { label: 'Home', address: '01 Shannon Rd, Salt River' },
-          { label: 'Work', address: '12 Roodebloem Rd, Woodstock' }
-        ]
+          { label: 'Work', address: '12 Roodebloem Rd, Woodstock' },
+        ],
       };
 
       profileData.profileCompletion = calculateProfileCompletion(profileData);
@@ -88,5 +88,5 @@ const deleteUser = async (req, res) => {
 module.exports = {
   createUser,
   getAllUsers,
-  deleteUser
+  deleteUser,
 };

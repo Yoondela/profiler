@@ -28,7 +28,7 @@ describe('Profiles API', () => {
       phone: '0712345678',
       address: '1 Test Lane',
       preferredContactMethod: 'sms',
-      notificationSettings: { email: true, sms: true }
+      notificationSettings: { email: true, sms: true },
     };
 
     const expectedCompletion = calculateProfileCompletion(payload);

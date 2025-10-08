@@ -10,7 +10,8 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
       globals: {
-        ...globals.node,     // ✅ Enables Node.js globals
+        ...globals.node,
+        ...globals.jest,
       },
     },
     rules: {

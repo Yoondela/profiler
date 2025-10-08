@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     const uri = process.env.NODE_ENV === 'test'
-    ? process.env.MONGO_URI_TEST
-    : process.env.MONGO_URI;
+      ? process.env.MONGO_URI_TEST
+      : process.env.MONGO_URI;
     const conn = await mongoose.connect(uri, {
       ssl: true, // force TLS
       tlsAllowInvalidCertificates: false,

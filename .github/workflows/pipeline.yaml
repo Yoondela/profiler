@@ -1,0 +1,42 @@
+name: Node.js CI Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Run ESLint
+        run: |
+          yarn lint
+
+      - name: Run Tests
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+        run: |
+          yarn test
+
+      - name: Generate Swagger Docs
+        if: always()
+        run: |
+          yarn swagger:generate || echo "Swagger generation skipped"

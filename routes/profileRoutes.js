@@ -8,7 +8,7 @@ const {
   getProfileById,
   updateProfile,
   updateProfileByEmail,
-  deleteProfile
+  deleteProfile,
 } = require('../controllers/profileController');
 
 router.post('/', createProfile);
