@@ -7,7 +7,7 @@ const connectDB = async () => {
       : process.env.MONGO_URI;
 
     if (!uri) throw new Error('MongoDB URI not found');
-    
+
     const conn = await mongoose.connect(uri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
