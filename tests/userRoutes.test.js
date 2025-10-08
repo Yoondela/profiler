@@ -12,12 +12,12 @@ describe('User endpoints', () => {
     // Increase timeout for slow Atlas connection
     jest.setTimeout(30000);
 
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGO_URI_TEST, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-    }
+    // if (mongoose.connection.readyState === 0) {
+    //   await mongoose.connect(process.env.MONGO_URI_TEST, {
+    //     useNewUrlParser: true,
+    //     useUnifiedTopology: true,
+    //   });
+    // }
   });
 
   afterAll(async () => {
