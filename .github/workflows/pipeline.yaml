@@ -9,6 +9,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
     services:
       mongo:
         image: mongo:7
@@ -35,13 +36,14 @@ jobs:
 
       - name: Run tests inside container
         env:
-          MONGO_URI: ${{ secrets.MONGO_URI_TEST }}
+          MONGO_URI: mongodb://mongo:27017/testdb
         run: |
           docker run --rm \
+            --network host \
             -e NODE_ENV=test \
             -e MONGO_URI=$MONGO_URI \
             backend yarn test
-            
+
       - name: Generate Swagger Docs
         if: always()
         run: docker run --rm backend yarn swagger:generate || echo "Swagger generation skipped"
