@@ -36,16 +36,10 @@ jobs:
       - name: Run tests inside container
         env:
           MONGO_URI: ${{ secrets.MONGO_URI_TEST }}
-          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
-          AUTH0_ISSUER: ${{ secrets.AUTH0_ISSUER }}
-          AUTH0_TOKEN_SIGNING_ALG: ${{ secrets.AUTH0_TOKEN_SIGNING_ALG }}
         run: |
           docker run --rm \
             -e NODE_ENV=test \
             -e MONGO_URI=$MONGO_URI \
-            -e AUTH0_AUDIENCE=$AUTH0_AUDIENCE \
-            -e AUTH0_ISSUER=$AUTH0_ISSUER \
-            -e AUTH0_TOKEN_SIGNING_ALG=$AUTH0_TOKEN_SIGNING_ALG \
             backend yarn test
             
       - name: Generate Swagger Docs
