@@ -36,12 +36,12 @@ jobs:
 
       - name: Run tests inside container
         env:
-          MONGO_URI: mongodb://mongo:27017/testdb
+          MONGO_URI_TEST: ${{ secrets.MONGO_URI_TEST }}
         run: |
           docker run --rm \
             --network host \
             -e NODE_ENV=test \
-            -e MONGO_URI=$MONGO_URI \
+            -e MONGO_URI_TEST=$MONGO_URI_TEST \
             backend yarn test
 
       - name: Generate Swagger Docs
