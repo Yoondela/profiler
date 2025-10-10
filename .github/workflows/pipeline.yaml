@@ -35,6 +35,7 @@ jobs:
         run: docker run --rm backend yarn lint
 
       - name: Run tests inside container
+        environment: Backend_env
         env:
           MONGO_URI_TEST: ${{ secrets.MONGO_URI_TEST }}
         run: |
