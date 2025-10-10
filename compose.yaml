@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: profiler-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: yarn dev
