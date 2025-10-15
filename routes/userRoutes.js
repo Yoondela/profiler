@@ -12,8 +12,8 @@ router.get('/protected', checkJwt, (req, res) => {
 });
 
 router.post('/', createUser);
-router.get('/', getAllUsers);
-router.patch('/:id/upgrade-to-provider', becomeProvider);
-router.delete('/:id', deleteUser);
+router.get('/', checkJwt, getAllUsers);
+router.patch('/:id/upgrade-to-provider', checkJwt, becomeProvider);
+router.delete('/:id', checkJwt, deleteUser);
 
 module.exports = router;

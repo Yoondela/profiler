@@ -1,29 +1,14 @@
 // tests/user.test.js
 const request = require('supertest');
-const mongoose = require('mongoose');
 const app = require('../index');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 
-jest.setTimeout(15000);
-
 describe('User endpoints', () => {
-  beforeAll(async () => {
-    // Increase timeout for slow Atlas connection
-    jest.setTimeout(30000);
-
-    // if (mongoose.connection.readyState === 0) {
-    //   await mongoose.connect(process.env.MONGO_URI_TEST, {
-    //     useNewUrlParser: true,
-    //     useUnifiedTopology: true,
-    //   });
-    // }
-  });
 
   afterAll(async () => {
-    await mongoose.connection.collection('users').deleteMany({});
-    await mongoose.connection.collection('profiles').deleteMany({});
-    await mongoose.connection.close();
+    await User.deleteMany({});
+    await Profile.deleteMany({});
   });
 
   test('POST /api/users creates user + default profile', async () => {

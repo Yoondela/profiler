@@ -5,7 +5,6 @@ const calculateProfileCompletion = require('../utils/calculateProfileCompletion'
 // Create profile
 const createProfile = async (req, res) => {
   try {
-    console.log('creating profile from data', req.body);
     const profileData = req.body;
     profileData.profileCompletion = calculateProfileCompletion(profileData);
 
@@ -101,8 +100,6 @@ const updateProfile = async (req, res) => {
 const updateProfileByEmail = async (req, res) => {
   try {
     const email = req.params.email;
-
-    console.log('This is the address', req.body.address);
 
     // Step 1: Find user by email
     const user = await User.findOne({ email });

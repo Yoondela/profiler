@@ -17,10 +17,10 @@ app.use(cors({
   credentials: true,
 }));
 
-const checkJwt = require('./middleware/auth');
-app.use(checkJwt);
 
-connectDB();
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 app.use(express.json());
 

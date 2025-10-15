@@ -1,6 +1,6 @@
 const request = require('supertest');
-const app = require('../index');
 const mongoose = require('mongoose');
+const app = require('../index');
 const User = require('../models/User');
 const ServiceBooking = require('../models/ServiceBooking');
 
@@ -30,12 +30,12 @@ describe('ServiceBooking API', () => {
   });
 
   beforeEach(async () => {
-    await mongoose.connection.collection('servicebookings').deleteMany({});
+    await ServiceBooking.deleteMany({});
   });
 
   afterAll(async () => {
-    await mongoose.connection.collection('servicebookings').deleteMany({});
-    await mongoose.connection.collection('users').deleteMany({});
+    await ServiceBooking.deleteMany({});
+    await User.deleteMany({});
   });
 
   it('should create a new service booking', async () => {
@@ -191,11 +191,6 @@ describe('ServiceBooking API - Get bookings by user', () => {
     }).save();
   });
 
-  afterAll(async () => {
-    await ServiceBooking.deleteMany({});
-    await User.deleteMany({});
-  });
-
   it('should get all bookings for a user', async () => {
     const res = await request(app)
       .get(`/api/bookings/user/${client._id}`);
@@ -224,8 +219,6 @@ describe('ServiceBooking API - Update a booking', () => {
   let client, provider, booking;
 
   beforeAll(async () => {
-    await ServiceBooking.deleteMany({});
-    await User.deleteMany({});
 
     // Create client and provider
     client = await new User({ name: 'Client', email: `client${Date.now()}@test.com` }).save();
@@ -240,11 +233,6 @@ describe('ServiceBooking API - Update a booking', () => {
       forAddress: '123 Main St',
     });
 
-  });
-  afterAll(async () => {
-    await ServiceBooking.deleteMany({});
-    await User.deleteMany({});
-    await mongoose.connection.close();
   });
 
   it('should update a booking status', async () => {

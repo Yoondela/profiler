@@ -4,7 +4,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "dev": "eslint . && nodemon server.js",
+    "dev": "eslint . && nodemon index.js",
     "format": "prettier --write .",
     "prepare": "husky install",
     "start": "node index.js",

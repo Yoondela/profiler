@@ -1,6 +1,5 @@
 // tests/profiles.test.js
 const request = require('supertest');
-const mongoose = require('mongoose');
 const app = require('../index');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
@@ -19,6 +18,11 @@ describe('Profiles API', () => {
     const uniqueEmail = `profileowner${Date.now()}@test.com`;
     user = new User({ name: 'Profile Owner', email: uniqueEmail });
     await user.save();
+  });
+
+  afterAll(async () => {
+    await Profile.deleteMany({});
+    await User.deleteMany({});
   });
 
   test('POST /api/profiles creates profile and computes completion', async () => {
@@ -112,11 +116,5 @@ describe('Profiles API', () => {
     expect(res.body.bio).toBe(updatePayload.bio);
     expect(res.body.phone).toBe(updatePayload.phone);
     expect(res.body.profileCompletion).toBe(expectedCompletion);
-  });
-
-  afterAll(async () => {
-    await Profile.deleteMany({});
-    await User.deleteMany({});
-    await mongoose.connection.close();
   });
 });
