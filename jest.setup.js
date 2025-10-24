@@ -1,6 +1,8 @@
 require('dotenv').config({ path: '.env' });
 
-jest.mock('express-oauth2-jwt-bearer');
+jest.mock('express-oauth2-jwt-bearer', () => ({
+  auth: () => (req, res, next) => next(),
+}));
 
 
 beforeAll(async () => {

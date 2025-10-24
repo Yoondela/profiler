@@ -2,8 +2,8 @@
 const express = require('express');
 const router = express.Router();
 
-const { createUser, getAllUsers, deleteUser } = require('../controllers/userController');
-const { becomeProvider } = require('../controllers/providerConroller,js');
+const { createUser, getAllUsers, getUserById, getUserByEmail, deleteUser } = require('../controllers/userController');
+const { becomeProvider } = require('../controllers/providerConroller');
 
 const checkJwt = require('../middleware/auth');
 
@@ -13,6 +13,8 @@ router.get('/protected', checkJwt, (req, res) => {
 
 router.post('/', createUser);
 router.get('/', checkJwt, getAllUsers);
+router.get('/:id', checkJwt, getUserById);
+router.get('/email/:email', checkJwt, getUserByEmail);
 router.patch('/:id/upgrade-to-provider', checkJwt, becomeProvider);
 router.delete('/:id', checkJwt, deleteUser);
 

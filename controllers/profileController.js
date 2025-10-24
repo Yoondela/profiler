@@ -50,6 +50,7 @@ const getProfileByEmail = async (req, res) => {
         user: {
           name: user.name,
           email: user.email,
+          _id: user._id,
         },
         profile: {
           bio: profile.bio,

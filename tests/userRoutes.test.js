@@ -40,6 +40,28 @@ describe('User endpoints', () => {
     }
   });
 
+  test('GET /api/users/:id retrieves user by ID', async () => {
+    const user = new User({ name: 'FetchMe', email: `fetchme${Date.now()}@ex.com` });
+    await user.save();
+
+    const res = await request(app).get(`/api/users/${user._id}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('name', 'FetchMe');
+    expect(res.body).toHaveProperty('email', user.email);
+  });
+
+  test('GET /api/users/:email retrieves user by email', async () => {
+    const uniqueEmail = `fetchbyemail${Date.now()}@example.com`;
+    const user = new User({ name: 'EmailFetch', email: uniqueEmail });
+    await user.save();
+
+    const res = await request(app).get(`/api/users/email/${uniqueEmail}`);
+    console.log('GET by email response body:', res.body);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('name', 'EmailFetch');
+    expect(res.body).toHaveProperty('email', uniqueEmail);
+  });
+
   test('DELETE /api/users/:id deletes user and profile', async () => {
     const user = new User({ name: 'ToDelete', email: `del${Date.now()}@ex.com` });
     await user.save();

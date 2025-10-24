@@ -1,6 +1,7 @@
 const ServiceBooking = require('../models/ServiceBooking');
 
 const createBooking = async (req, res) => {
+  console.log('Create booking request body:', req.body);
   try {
     const {
       client,

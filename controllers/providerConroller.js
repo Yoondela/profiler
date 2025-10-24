@@ -1,0 +1,46 @@
+const User = require('../models/User');
+
+const becomeProvider = async (req, res) => {
+  console.log('becomeProvider called with params:', req.params);
+  try {
+    const { id } = req.params;
+
+    // Find user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.roles.includes('provider')) {
+      user.roles.push('provider');
+    }
+
+    // Create providerProfile if missing
+    if (!user.providerProfile) {
+      user.providerProfile = {
+        servicesOffered: [],
+        bio: '',
+        phone: '',
+        address: '',
+        becameProviderAt: new Date(),
+      };
+    }
+
+    // Ensure becameProviderAt is set
+    if (!user.providerProfile.becameProviderAt) {
+      user.providerProfile.becameProviderAt = new Date();
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: 'User upgraded to provider successfully',
+      userRoles: user.roles,
+      providerProfile: user.providerProfile,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { becomeProvider };
