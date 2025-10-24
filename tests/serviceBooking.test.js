@@ -45,6 +45,7 @@ describe('ServiceBooking API', () => {
       serviceType: 'Plumbing',
       description: 'Fix leaking kitchen sink',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '456 Test Lane',
       note: 'Please bring your own tools',
     };
@@ -74,6 +75,7 @@ describe('ServiceBooking API', () => {
         serviceType: 'Plumbing',
         status: 'pending',
         forDate: new Date(),
+        forTime: '10:00 AM',
         forAddress: '123 Main St',
         description: 'Fix sink',
       },
@@ -83,6 +85,7 @@ describe('ServiceBooking API', () => {
         serviceType: 'Cleaning',
         status: 'confirmed',
         forDate: new Date(),
+        forTime: '10:00 AM',
         forAddress: '456 Test Ave',
         description: 'Clean kitchen',
       },
@@ -102,6 +105,7 @@ describe('ServiceBooking API', () => {
       serviceType: 'Gardening',
       status: 'pending',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '123 Main St',
       description: 'Fix sink',
     });
@@ -131,6 +135,7 @@ describe('ServiceBooking API', () => {
       serviceType: 'Plumbing',
       description: 'Fix sink in kitchen',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '123 Street',
     });
 
@@ -140,6 +145,7 @@ describe('ServiceBooking API', () => {
       serviceType: 'Cleaning',
       description: 'Clean living room',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '456 Avenue',
     });
 
@@ -176,6 +182,7 @@ describe('ServiceBooking API - Get bookings by user', () => {
       description: 'Past booking',
       requestedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       forDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      forTime: '10:00 AM',
       forAddress: '123 Past St',
     }).save();
 
@@ -187,6 +194,7 @@ describe('ServiceBooking API - Get bookings by user', () => {
       description: 'Upcoming booking',
       requestedAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
       forDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      forTime: '10:00 AM',
       forAddress: '456 Future Ave',
     }).save();
   });
@@ -230,6 +238,7 @@ describe('ServiceBooking API - Update a booking', () => {
       serviceType: 'Plumbing',
       description: 'Fix kitchen sink leaking',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '123 Main St',
     });
 
@@ -252,6 +261,7 @@ describe('ServiceBooking API - Update a booking', () => {
       serviceType: 'Plumbing',
       description: 'Fix leaking sink',
       forDate: new Date(),
+      forTime: '10:00 AM',
       forAddress: '123 Main St',
     });
 
@@ -261,6 +271,7 @@ describe('ServiceBooking API - Update a booking', () => {
         description: 'Fix leaking bathroom tap',
         note: 'Bring extra washers',
         forDate: new Date('2025-10-01'),
+        forTime: '10:00 AM',
         forAddress: '456 Elm St',
         serviceType: 'Cleaning',
       });

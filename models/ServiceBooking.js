@@ -34,6 +34,10 @@ const serviceBookingSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  forTime: {
+    type: String,
+    required: true,
+  },
   forAddress: {
     type: String,
     required: true,

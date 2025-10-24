@@ -40,11 +40,11 @@ describe('User endpoints', () => {
     }
   });
 
-  test('GET /api/users/:id retrieves user by ID', async () => {
+  test('GET /api/users/id/:id retrieves user by ID', async () => {
     const user = new User({ name: 'FetchMe', email: `fetchme${Date.now()}@ex.com` });
     await user.save();
 
-    const res = await request(app).get(`/api/users/${user._id}`);
+    const res = await request(app).get(`/api/users/id/${user._id}`);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('name', 'FetchMe');
     expect(res.body).toHaveProperty('email', user.email);

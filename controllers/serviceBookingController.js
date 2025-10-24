@@ -9,6 +9,7 @@ const createBooking = async (req, res) => {
       serviceType,
       description,
       forDate,
+      forTime,
       forAddress,
       note,
     } = req.body;
@@ -20,6 +21,7 @@ const createBooking = async (req, res) => {
       serviceType,
       description,
       forDate,
+      forTime,
       forAddress,
       note,
     });
@@ -145,6 +147,7 @@ const updateBooking = async (req, res) => {
       'description',
       'note',
       'forDate',
+      'forTime',
       'forAddress',
       'serviceType',
       'status', // keep status editable too
