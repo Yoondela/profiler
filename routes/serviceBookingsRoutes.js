@@ -7,6 +7,7 @@ const {
   getBookingsByUserId,
   getUpcomingBookingsByUser,
   getPastBookingsByUser,
+  getPendingBookings,
   updateBookingStatus,
   updateBooking,
 } = require('../controllers/serviceBookingController');
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.post('/bookings', checkJwt, createBooking);
 router.get('/bookings', checkJwt, getAllServiceBookings);
+router.get('/bookings/pending', checkJwt, getPendingBookings);
 router.get('/bookings/:id', checkJwt, getBookingById);
 router.get('/bookings/user/:userId', checkJwt, getBookingsByUserId);
 router.get('/bookings/user/:userId/upcoming', checkJwt, getUpcomingBookingsByUser);

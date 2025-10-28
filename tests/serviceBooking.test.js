@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const app = require('../index');
 const User = require('../models/User');
 const ServiceBooking = require('../models/ServiceBooking');
+const { it } = require('@faker-js/faker');
+const Test = require('supertest/lib/test');
 
 jest.setTimeout(20000);
 
@@ -38,7 +40,7 @@ describe('ServiceBooking API', () => {
     await User.deleteMany({});
   });
 
-  it('should create a new service booking', async () => {
+  test('should create a new service booking', async () => {
     const bookingPayload = {
       client: clientUser._id.toString(),
       provider: providerUser._id.toString(),
@@ -67,7 +69,7 @@ describe('ServiceBooking API', () => {
     expect(saved.description).toBe(bookingPayload.description);
   });
 
-  it('should return all bookings', async () => {
+  test('should return all bookings', async () => {
     await ServiceBooking.create([
       {
         client: new mongoose.Types.ObjectId(),
@@ -98,7 +100,7 @@ describe('ServiceBooking API', () => {
     expect(res.body[0]).toHaveProperty('serviceType');
   });
 
-  it('should get a booking by id', async () => {
+  test('should get a booking by id', async () => {
     const booking = await ServiceBooking.create({
       client: new mongoose.Types.ObjectId(),
       provider: new mongoose.Types.ObjectId(),
@@ -116,7 +118,7 @@ describe('ServiceBooking API', () => {
     expect(res.body).toHaveProperty('_id', booking._id.toString());
   });
 
-  it('should return 404 if booking not found', async () => {
+  test('should return 404 if booking not found', async () => {
     const fakeId = new mongoose.Types.ObjectId();
     const res = await request(app).get(`/api/bookings/${fakeId}`);
 
@@ -124,7 +126,7 @@ describe('ServiceBooking API', () => {
     expect(res.body).toHaveProperty('message', 'Booking not found');
   });
 
-  it('should return all bookings for a given userId as client or provider', async () => {
+  test('should return all bookings for a given userId as client or provider', async () => {
 
     clientUser = await User.create({ name: 'Client', email: 'client@test.com' });
     providerUser = await User.create({ name: 'Provider', email: 'provider@test.com' });
@@ -199,7 +201,7 @@ describe('ServiceBooking API - Get bookings by user', () => {
     }).save();
   });
 
-  it('should get all bookings for a user', async () => {
+  test('should get all bookings for a user', async () => {
     const res = await request(app)
       .get(`/api/bookings/user/${client._id}`);
 
@@ -207,18 +209,45 @@ describe('ServiceBooking API - Get bookings by user', () => {
     expect(res.body.length).toBe(2);
   });
 
-  it('should get upcoming bookings for a user', async () => {
+  test('should get upcoming bookings for a user', async () => {
     const res = await request(app).get(`/api/bookings/user/${client._id}/upcoming`);
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBe(1);
     expect(res.body[0].description).toBe('Upcoming booking');
   });
 
-  it('should get past bookings for a user', async () => {
+  test('should get past bookings for a user', async () => {
     const res = await request(app).get(`/api/bookings/user/${client._id}/past`);
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBe(1);
     expect(res.body[0].description).toBe('Past booking');
+  });
+
+  test('should get pending bookings', async () => {
+    const pendingBooking = await new ServiceBooking({
+      client: client._id,
+      provider: provider._id,
+      serviceType: 'Tiling',
+      description: 'Pending booking',
+      forDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      forTime: '10:00 AM',
+      forAddress: '789 Pending Rd',
+      status: 'pending',
+    }).save();
+
+    const res = await request(app).get('/api/bookings/pending');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    const descriptions = res.body.map(b => b.description);
+    expect(descriptions).toContain('Pending booking');
+  });
+
+  test('should return 404 if no bookings found for user', async () => {
+    const newUser = await new User({ name: 'NoBookingUser', email: `nobooking${Date.now()}@test.com` }).save();
+
+    const res = await request(app).get(`/api/bookings/user/${newUser._id}`);
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toHaveProperty('message', 'No bookings found for this user');
   });
 });
 
@@ -244,7 +273,7 @@ describe('ServiceBooking API - Update a booking', () => {
 
   });
 
-  it('should update a booking status', async () => {
+  test('should update a booking status', async () => {
     const res = await request(app)
       .patch(`/api/bookings/status/${booking._id}`)
       .send({ status: 'accepted' });
@@ -254,7 +283,7 @@ describe('ServiceBooking API - Update a booking', () => {
     expect(res.body.status).toBe('accepted');
   });
 
-  it('should update editable booking fields', async () => {
+  test('should update editable booking fields', async () => {
     const booking = await ServiceBooking.create({
       client: new mongoose.Types.ObjectId(),
       provider: new mongoose.Types.ObjectId(),

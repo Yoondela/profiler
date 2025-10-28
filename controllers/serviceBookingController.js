@@ -177,6 +177,17 @@ const updateBooking = async (req, res) => {
   }
 };
 
+const getPendingBookings = async (req, res) => {
+  try {
+    const bookings = await ServiceBooking.find({ status: 'pending' }).populate('client');
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching pending bookings:', error);
+    res.status(500).json({ message: 'Server error fetching pending bookings' });
+  }
+};
+
+
 
 module.exports = {
   createBooking,
@@ -187,4 +198,5 @@ module.exports = {
   getPastBookingsByUser,
   updateBookingStatus,
   updateBooking,
+  getPendingBookings,
 };
