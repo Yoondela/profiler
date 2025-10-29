@@ -11,8 +11,14 @@ const connectDB = require('./config/db');
 const app = express();
 
 const cors = require('cors');
+
+const allowedOrigins = [
+  "http://localhost:5173", // for local development
+  "https://profiler-q6hu.onrender.com", // deployed URL
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true,
 }));
