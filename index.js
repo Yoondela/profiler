@@ -14,6 +14,7 @@ const cors = require('cors');
 
 const allowedOrigins = [
   'http://localhost:5173', // for local development
+  'http://localhost:5174',
   'https://profiler-q6hu.onrender.com', // deployed URL
 ];
 
