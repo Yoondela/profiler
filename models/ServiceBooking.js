@@ -9,12 +9,13 @@ const serviceBookingSchema = new mongoose.Schema({
   provider: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    default: null,
     required: false,
   },
   serviceType: {
     type: String,
     required: true,
-    enum: ['Plumbing', 'Cleaning', 'Gardening', 'Tiling', 'Other'],
+    enum: ['Plumbing', 'Cleaning', 'Gardening', 'Tiling', 'Car Wash', 'Other'],
   },
   description: {
     type: String,

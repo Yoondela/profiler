@@ -1,7 +1,7 @@
 const ServiceBooking = require('../models/ServiceBooking');
 
 const createBooking = async (req, res) => {
-  console.log('Create booking request body:', req.body);
+  console.log('Creating abooking');
   try {
     const {
       client,
@@ -29,6 +29,7 @@ const createBooking = async (req, res) => {
     await booking.save();
 
     res.status(201).json(booking);
+    console.log('Booking created:', booking);
   } catch (err) {
     console.error('Create booking error:', err.message);
     res.status(400).json({ message: err.message });
@@ -64,6 +65,48 @@ const getBookingsByUserId = async (req, res) => {
     res.status(200).json(bookings);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+const getClientBookings = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const { status } = req.query;
+
+    const filter = { client: clientId };
+    if (status) filter.status = status;
+
+    const bookings = await ServiceBooking.find(filter)
+      .populate('client', 'name email')
+      .populate('provider', 'name email');
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching client bookings by status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getProviderBookings = async (req, res) => {
+
+  console.log('Get provider bookings request params:');
+  try {
+    const { providerId } = req.params;
+    const { status } = req.query;
+
+    const filter = { provider: providerId };
+    if (status) filter.status = status;
+
+    const bookings = await ServiceBooking.find(filter)
+      .populate('client', 'name email')
+      .populate('provider', 'name email')
+      .sort({ forDate: -1 });
+
+    res.status(200).json(bookings);
+    console.log('Provider bookings fetched:', bookings);
+  } catch (error) {
+    console.error('Error fetching provider bookings by status:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -115,14 +158,24 @@ const getPastBookingsByUser = async (req, res) => {
   }
 };
 
-// Update booking
+// Update booking status
 const updateBookingStatus = async (req, res) => {
+  console.log('Update booking request params:', req.params);
+  console.log('Update booking request body:', req.body);
+
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const { status, providerId } = req.body;
+
+    // Build updates object safely
+    const updates = { status };
+    if (status === 'accepted' && providerId) {
+      updates.provider = providerId;
+    }
+
     const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
-      new: true, // return the updated doc
-      runValidators: true, // enforce schema validation
+      new: true,
+      runValidators: true,
     })
       .populate('client', 'name email')
       .populate('provider', 'name email');
@@ -131,8 +184,10 @@ const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
+    console.log('Booking status updated:', booking);
     res.status(200).json(booking);
   } catch (err) {
+    console.error('Error updating booking:', err.message);
     res.status(400).json({ message: err.message });
   }
 };
@@ -187,7 +242,44 @@ const getPendingBookings = async (req, res) => {
   }
 };
 
+// controllers/bookingController.js
+const getAcceptedBookingsForClient = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
+    const bookings = await ServiceBooking.find({
+      client: userId,
+      status: 'accepted',
+    })
+      .populate('client', 'name email')
+      .populate('provider', 'name email');
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching accepted bookings:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getBookingsByStatus = async (req, res) => {
+  console.log('Getting booking by status', req.body);
+  try {
+    const { status } = req.query;
+
+    const filter = {};
+    if (status) filter.status = status;
+
+    const bookings = await ServiceBooking.find(filter)
+      .populate('client', 'name email')
+      .populate('provider', 'name email')
+      .sort({ requestedAt: -1 });
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 module.exports = {
   createBooking,
@@ -199,4 +291,8 @@ module.exports = {
   updateBookingStatus,
   updateBooking,
   getPendingBookings,
+  getAcceptedBookingsForClient,
+  getBookingsByStatus,
+  getClientBookings,
+  getProviderBookings,
 };

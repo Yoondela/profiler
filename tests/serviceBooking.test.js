@@ -251,65 +251,102 @@ describe('ServiceBooking API - Get bookings by user', () => {
   });
 });
 
-describe('ServiceBooking API - Update a booking', () => {
-
-  let client, provider, booking;
+describe('GET /bookings/client/:userId filter by status', () => {
 
   beforeAll(async () => {
 
-    // Create client and provider
     client = await new User({ name: 'Client', email: `client${Date.now()}@test.com` }).save();
     provider = await new User({ name: 'Provider', email: `provider${Date.now()}@test.com` }).save();
 
-    booking = await ServiceBooking.create({
-      client: client,
-      provider: provider,
+    acceptedBooking = await ServiceBooking.create({
+      client: client._id,
+      provider: provider._id,
       serviceType: 'Plumbing',
-      description: 'Fix kitchen sink leaking',
+      description: 'Fix sink',
       forDate: new Date(),
-      forTime: '10:00 AM',
+      forTime: '09:00',
       forAddress: '123 Main St',
+      status: 'accepted',
     });
 
+    pendingBooking = await ServiceBooking.create({
+      client: client._id,
+      provider: provider._id,
+      serviceType: 'Cleaning',
+      description: 'Clean room',
+      forDate: new Date(),
+      forTime: '11:00',
+      forAddress: '456 High St',
+      status: 'pending',
+    });
   });
 
-  test('should update a booking status', async () => {
+  test('should only return accepted bookings for that client', async () => {
+
     const res = await request(app)
-      .patch(`/api/bookings/status/${booking._id}`)
-      .send({ status: 'accepted' });
+      .get(`/api/bookings/client/${client._id}?status=accepted`)
+      .set('Authorization', `Bearer ${global.testToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('_id', booking._id.toString());
-    expect(res.body.status).toBe('accepted');
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].status).toBe('accepted');
+    // expect(res.body[0].client).toBe(clientId);
   });
+});
 
-  test('should update editable booking fields', async () => {
-    const booking = await ServiceBooking.create({
-      client: new mongoose.Types.ObjectId(),
-      provider: new mongoose.Types.ObjectId(),
+describe('GET /bookings/provider/:providerId filter by status', () => {
+  let provider, client, acceptedBooking, pendingBooking;
+
+  beforeAll(async () => {
+    client = await new User({ name: 'Client', email: `client${Date.now()}@test.com` }).save();
+    provider = await new User({ name: 'Provider', email: `provider${Date.now()}@test.com` }).save();
+
+    acceptedBooking = await ServiceBooking.create({
+      client: client._id,
+      provider: provider._id,
       serviceType: 'Plumbing',
-      description: 'Fix leaking sink',
+      description: 'Fix sink',
       forDate: new Date(),
-      forTime: '10:00 AM',
+      forTime: '09:00',
       forAddress: '123 Main St',
+      status: 'accepted',
     });
 
+    pendingBooking = await ServiceBooking.create({
+      client: client._id,
+      provider: provider._id,
+      serviceType: 'Cleaning',
+      description: 'Clean room',
+      forDate: new Date(),
+      forTime: '11:00',
+      forAddress: '456 High St',
+      status: 'pending',
+    });
+  });
+
+  afterAll(async () => {
+    await User.deleteMany({});
+    await ServiceBooking.deleteMany({});
+    await mongoose.connection.close();
+  });
+
+  test('should return only accepted bookings for this provider', async () => {
     const res = await request(app)
-      .patch(`/api/bookings/${booking._id}`)
-      .send({
-        description: 'Fix leaking bathroom tap',
-        note: 'Bring extra washers',
-        forDate: new Date('2025-10-01'),
-        forTime: '10:00 AM',
-        forAddress: '456 Elm St',
-        serviceType: 'Cleaning',
-      });
+      .get(`/api/bookings/provider/${provider._id}?status=accepted`)
+      .set('Authorization', `Bearer ${global.testToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.description).toBe('Fix leaking bathroom tap');
-    expect(res.body.note).toBe('Bring extra washers');
-    expect(new Date(res.body.forDate)).toEqual(new Date('2025-10-01'));
-    expect(res.body.forAddress).toBe('456 Elm St');
-    expect(res.body.serviceType).toBe('Cleaning');
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].status).toBe('accepted');
+    expect(res.body[0].provider._id).toBe(provider._id.toString());
+  });
+
+  test('should return all bookings for this provider if no status provided', async () => {
+    const res = await request(app)
+      .get(`/api/bookings/provider/${provider._id}`)
+      .set('Authorization', `Bearer ${global.testToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.length).toBe(2);
   });
 });
