@@ -21,6 +21,11 @@ const profileSchema = new mongoose.Schema({
     defalt: '',
   },
 
+  avatarUrl: {
+    type: String,
+    default: '',
+  },
+
   preferredContactMethod: {
     type: String,
     enum: ['email', 'sms', 'phone'],

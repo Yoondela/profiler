@@ -60,6 +60,7 @@ const getProfileByEmail = async (req, res) => {
           notificationSettings: profile.notificationSettings,
           savedAddresses: profile.savedAddresses,
           createdAt: profile.createdAt,
+          avatarUrl: profile.avatarUrl,
         },
       },
     });
@@ -81,16 +82,21 @@ const getProfileById = async (req, res) => {
 
 // Update profile
 const updateProfile = async (req, res) => {
+  console.log('Update profile called with data:', req.body);
   try {
     const updated = await Profile.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
 
+    console.log('Profile found for update:', updated);
+
     if (updated) {
       updated.profileCompletion = calculateProfileCompletion(updated);
       await updated.save();
     }
+
+    console.log('Updated profile:', updated);
 
     res.status(200).json(updated);
   } catch (err) {
@@ -100,6 +106,8 @@ const updateProfile = async (req, res) => {
 
 const updateProfileByEmail = async (req, res) => {
   try {
+
+    console.log('Update profile by email called with data:', req.body);
     const email = req.params.email;
 
     // Step 1: Find user by email
@@ -119,11 +127,12 @@ const updateProfileByEmail = async (req, res) => {
 
     if (shouldReplaceName) {
       user.name = req.body.name;
-      await user.save(); // 💾 Important to persist the name change
+      await user.save();
     }
 
     // Step 4: Update profile fields if present
     if (req.body.bio !== undefined) profile.bio = req.body.bio;
+    if (req.body.avatarUrl !== undefined) profile.avatarUrl = req.body.avatarUrl;
     if (req.body.phone !== undefined) profile.phone = req.body.phone;
     if (req.body.address !== undefined) profile.address = req.body.address;
     if (req.body.preferredContactMethod !== undefined) {

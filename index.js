@@ -24,7 +24,6 @@ app.use(cors({
   credentials: true,
 }));
 
-
 if (process.env.NODE_ENV !== 'test') {
   connectDB();
 }
@@ -32,6 +31,9 @@ if (process.env.NODE_ENV !== 'test') {
 app.use(express.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+const uploadRoutes = require('./routes/uploadApi/uploadRoutes');
+app.use('/api', uploadRoutes);
 
 const userRoutes = require ('./routes/userRoutes');
 app.use('/api', userRoutes);
@@ -43,7 +45,7 @@ app.use('/api/profiles', profileRoutes);
 const serviceBookingsRoutes = require('./routes/serviceBookingsRoutes');
 app.use('/api', serviceBookingsRoutes);
 
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.send('Profiler backend is live');
 });
 

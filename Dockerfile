@@ -1,5 +1,5 @@
 # Use a lightweight Node.js image
-FROM node:22-alpine
+FROM node:22
 
 # Set working directory inside container
 WORKDIR /usr/src/app
@@ -8,6 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json yarn.lock* ./
 
 # Install dependencies
+RUN yarn config set network-timeout 600000
 RUN yarn install
 
 # Copy rest of the code
