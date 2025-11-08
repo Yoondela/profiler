@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../index'); // your express app
+const app = require('../app'); // your express app
 
 jest.setTimeout(10000);
 

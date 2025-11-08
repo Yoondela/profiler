@@ -1,5 +1,5 @@
 [1mdiff --git a/config/db.js b/config/db.js[m
-[1mindex 403f70c..9761e63 100644[m
+[1mapp 403f70c..9761e63 100644[m
 [1m--- a/config/db.js[m
 [1m+++ b/config/db.js[m
 [36m@@ -5,7 +5,11 @@[m [mconst connectDB = async () => {[m
@@ -15,10 +15,10 @@
      console.log(`MongoDB Connected: ${conn.connection.host}`);[m
    } catch (err) {[m
      console.error('MongoDB connection failed:', err.message);[m
-[1mdiff --git a/index.js b/index.js[m
-[1mindex 4cf23cf..3ea2cf4 100644[m
-[1m--- a/index.js[m
-[1m+++ b/index.js[m
+[1mdiff --git a/app.js b/app.js[m
+[1mapp 4cf23cf..3ea2cf4 100644[m
+[1m--- a/app.js[m
+[1m+++ b/app.js[m
 [36m@@ -28,6 +28,9 @@[m [mapp.use('/api/users', userRoutes);[m
  const profileRoutes = require('./routes/profileRoutes');[m
  app.use('/api/profiles', profileRoutes);[m
@@ -30,7 +30,7 @@
    res.send('Profiler backend is live');[m
  });[m
 [1mdiff --git a/models/ServiceBooking.js b/models/ServiceBooking.js[m
-[1mindex 75198fe..56c703f 100644[m
+[1mapp 75198fe..56c703f 100644[m
 [1m--- a/models/ServiceBooking.js[m
 [1m+++ b/models/ServiceBooking.js[m
 [36m@@ -1,6 +1,6 @@[m
@@ -78,7 +78,7 @@
  [m
  module.exports = mongoose.model('ServiceBooking', serviceBookingSchema);[m
 [1mdiff --git a/models/User.js b/models/User.js[m
-[1mindex 239292f..5107866 100644[m
+[1mapp 239292f..5107866 100644[m
 [1m--- a/models/User.js[m
 [1m+++ b/models/User.js[m
 [36m@@ -1,27 +1,30 @@[m
@@ -136,7 +136,7 @@
 [31m-module.exports = User;[m
 [32m+[m[32mmodule.exports = mongoose.model('User', userSchema);[m
 [1mdiff --git a/package.json b/package.json[m
-[1mindex 84d1530..b149f4f 100644[m
+[1mapp 84d1530..b149f4f 100644[m
 [1m--- a/package.json[m
 [1m+++ b/package.json[m
 [36m@@ -11,7 +11,7 @@[m
@@ -149,7 +149,7 @@
    "keywords": [],[m
    "author": "",[m
 [1mdiff --git a/routes/serviceBookingsRoutes.js b/routes/serviceBookingsRoutes.js[m
-[1mindex a2d1bb4..4bd136e 100644[m
+[1mapp a2d1bb4..4bd136e 100644[m
 [1m--- a/routes/serviceBookingsRoutes.js[m
 [1m+++ b/routes/serviceBookingsRoutes.js[m
 [36m@@ -1,15 +1,10 @@[m
@@ -174,7 +174,7 @@
  [m
  module.exports = router;[m
 [1mdiff --git a/routes/userRoutes.js b/routes/userRoutes.js[m
-[1mindex 6bd7e82..ba43b58 100644[m
+[1mapp 6bd7e82..ba43b58 100644[m
 [1m--- a/routes/userRoutes.js[m
 [1m+++ b/routes/userRoutes.js[m
 [36m@@ -3,6 +3,7 @@[m [mconst express = require('express');[m
@@ -194,15 +194,15 @@
  [m
  module.exports = router;[m
 [1mdiff --git a/tests/userProfile.test.js b/tests/userProfile.test.js[m
-[1mindex 895479a..62ad570 100644[m
+[1mapp 895479a..62ad570 100644[m
 [1m--- a/tests/userProfile.test.js[m
 [1m+++ b/tests/userProfile.test.js[m
 [36m@@ -1,11 +1,12 @@[m
 [32m+[m[32m// tests/profiles.test.js[m
  const request = require('supertest');[m
-[31m-const app = require('../index');[m
+[31m-const app = require('../app');[m
  const mongoose = require('mongoose');[m
-[32m+[m[32mconst app = require('../index');[m
+[32m+[m[32mconst app = require('../app');[m
  const User = require('../models/User');[m
  const Profile = require('../models/Profile');[m
 [31m-const calculateProfileCompletion = require("../utils/calculateProfileCompletion");[m
@@ -338,15 +338,15 @@
  [m
    afterAll(async () => {[m
 [1mdiff --git a/tests/userRoutes.test.js b/tests/userRoutes.test.js[m
-[1mindex a7f0c70..84f38c1 100644[m
+[1mapp a7f0c70..84f38c1 100644[m
 [1m--- a/tests/userRoutes.test.js[m
 [1m+++ b/tests/userRoutes.test.js[m
 [36m@@ -1,43 +1,32 @@[m
 [32m+[m[32m// tests/user.test.js[m
  const request = require('supertest');[m
-[31m-const app = require('../index');[m
+[31m-const app = require('../app');[m
  const mongoose = require('mongoose');[m
-[32m+[m[32mconst app = require('../index');[m
+[32m+[m[32mconst app = require('../app');[m
  const User = require('../models/User');[m
  const Profile = require('../models/Profile');[m
 [31m-const calculateProfileCompletion = require("../utils/calculateProfileCompletion");[m

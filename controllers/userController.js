@@ -93,6 +93,7 @@ const getUserByEmail = async (req, res) => {
     }
 
     res.status(200).json(user); // ✅ End the response properly
+    console.log('This is the user:', user );
   } catch (err) {
     console.error('Get user by email error:', err.message);
     res.status(500).json({ message: err.message });

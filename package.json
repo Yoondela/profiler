@@ -1,13 +1,13 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "private": true,
   "scripts": {
-    "dev": "eslint . && nodemon index.js",
+    "dev": "eslint . && nodemon server.js",
     "format": "prettier --write .",
     "prepare": "husky install",
-    "start": "node index.js",
+    "start": "node server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prestart": "npm run lint",

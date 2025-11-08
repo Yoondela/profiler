@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../index');
+const app = require('../app');
 const User = require('../models/User');
 const ServiceBooking = require('../models/ServiceBooking');
 const { it } = require('@faker-js/faker');

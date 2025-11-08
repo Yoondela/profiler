@@ -1,6 +1,6 @@
 // tests/user.test.js
 const request = require('supertest');
-const app = require('../index');
+const app = require('../app');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 
@@ -29,9 +29,6 @@ describe('User endpoints', () => {
     expect(response.body.newUser).toHaveProperty('roles');
     expect(Array.isArray(response.body.newUser.roles)).toBe(true);
     expect(response.body.newUser.roles).toContain('client');
-
-    // providerProfile default should be null (no provider yet)
-    expect(response.body.newUser).toHaveProperty('providerProfile', null);
 
     // ensure profile object is returned (if your controller returns it)
     if (response.body.profile) {

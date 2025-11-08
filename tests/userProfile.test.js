@@ -1,6 +1,6 @@
 // tests/profiles.test.js
 const request = require('supertest');
-const app = require('../index');
+const app = require('../app');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 const calculateProfileCompletion = require('../utils/calculateProfileCompletion');
