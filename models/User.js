@@ -12,6 +12,23 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
+userSchema.virtual('portfolio', {
+  ref: 'Portfolio',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+});
+
+userSchema.virtual('profile', {
+  ref: 'Profile',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+});
+
 userSchema.methods.hasRole = function (role) {
   return this.roles && this.roles.includes(role);
 };

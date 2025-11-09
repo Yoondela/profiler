@@ -81,19 +81,18 @@ const getUserById = async (req, res) => {
 };
 
 const getUserByEmail = async (req, res) => {
+  console.log('Getting user by email');
   try {
-    console.log('Reached getUserByEmail controller');
     const { email } = req.params;
 
     const user = await User.findOne({ email });
-    console.log('Reached getUserByEmail controller 2');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     res.status(200).json(user); // ✅ End the response properly
-    console.log('This is the user:', user );
+    console.log('Successful');
   } catch (err) {
     console.error('Get user by email error:', err.message);
     res.status(500).json({ message: err.message });

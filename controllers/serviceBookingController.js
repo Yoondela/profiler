@@ -69,6 +69,7 @@ const getBookingsByUserId = async (req, res) => {
 };
 
 const getClientBookings = async (req, res) => {
+  console.log('Getting client bookings');
   try {
     const { clientId } = req.params;
     const { status } = req.query;
@@ -77,10 +78,22 @@ const getClientBookings = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-      .populate('client', 'name email')
-      .populate('provider', 'name email');
+        .populate({
+          path: 'client',
+          select: 'name email',
+          populate: { path: 'profile' }
+        })
+        .populate({
+          path: 'provider',
+          select: 'name email',
+          populate: [
+            { path: 'portfolio' },
+            { path: 'profile' }
+          ]
+        })
 
     res.status(200).json(bookings);
+    console.log('Successful!');
   } catch (error) {
     console.error('Error fetching client bookings by status:', error);
     res.status(500).json({ message: 'Server error' });
@@ -244,6 +257,7 @@ const getPendingBookings = async (req, res) => {
 
 // controllers/bookingController.js
 const getAcceptedBookingsForClient = async (req, res) => {
+  console.log('hit 22');
   try {
     const { userId } = req.params;
 
@@ -251,8 +265,8 @@ const getAcceptedBookingsForClient = async (req, res) => {
       client: userId,
       status: 'accepted',
     })
-      .populate('client', 'name email')
-      .populate('provider', 'name email');
+      .populate('client', 'name')
+      .populate('provider', 'name');
 
     res.status(200).json(bookings);
   } catch (error) {
@@ -270,8 +284,8 @@ const getBookingsByStatus = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-      .populate('client', 'name email')
-      .populate('provider', 'name email')
+      .populate('client', 'name')
+      .populate('provider', 'name')
       .sort({ requestedAt: -1 });
 
     res.status(200).json(bookings);

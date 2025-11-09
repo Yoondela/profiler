@@ -28,7 +28,7 @@ const updatePortfolio = async (req, res) => {
     const updates = req.body;
 
     // get user
-    const portfolio = await Portfolio.findOne({user: providerId})
+    const portfolio = await Portfolio.findOne({user: providerId});
     if (!portfolio) return res.status(404).json({ message: 'Provider not found' });
 
     // iterate only keys sent -> update nested providerProfile

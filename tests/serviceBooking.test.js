@@ -327,7 +327,6 @@ describe('GET /bookings/provider/:providerId filter by status', () => {
   afterAll(async () => {
     await User.deleteMany({});
     await ServiceBooking.deleteMany({});
-    await mongoose.connection.close();
   });
 
   test('should return only accepted bookings for this provider', async () => {
@@ -348,5 +347,42 @@ describe('GET /bookings/provider/:providerId filter by status', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBe(2);
+  });
+});
+
+describe('PATCH /bookings/status/:userId', () => {
+  let provider, client, acceptedBooking, pendingBooking;
+
+  beforeAll(async () => {
+    client = await new User({ name: 'Client', email: `client${Date.now()}@test.com` }).save();
+    provider = await new User({ name: 'Provider', email: `provider${Date.now()}@test.com` }).save();
+
+    pendingBooking = await ServiceBooking.create({
+      client: client._id,
+      provider: provider._id,
+      serviceType: 'Cleaning',
+      description: 'Clean room',
+      forDate: new Date(),
+      forTime: '11:00',
+      forAddress: '456 High St',
+      status: 'pending',
+    });
+  });
+
+  afterAll(async () => {
+    await User.deleteMany({});
+    await ServiceBooking.deleteMany({});
+    await mongoose.connection.close();
+  });
+
+  test('should should update booking status', async () => {
+    const res = await request(app)
+      .patch(`/api/bookings/status/${pendingBooking._id}`)
+      .send({status: 'accepted'})
+      .set('Authorization', `Bearer ${global.testToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe('accepted');
+    expect(res.body.provider._id).toBe(provider._id.toString());
   });
 });
