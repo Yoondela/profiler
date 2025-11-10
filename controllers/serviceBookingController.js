@@ -78,19 +78,19 @@ const getClientBookings = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-        .populate({
-          path: 'client',
-          select: 'name email',
-          populate: { path: 'profile' }
-        })
-        .populate({
-          path: 'provider',
-          select: 'name email',
-          populate: [
-            { path: 'portfolio' },
-            { path: 'profile' }
-          ]
-        })
+      .populate({
+        path: 'client',
+        select: 'name email',
+        populate: { path: 'profile' },
+      })
+      .populate({
+        path: 'provider',
+        select: 'name email',
+        populate: [
+          { path: 'portfolio' },
+          { path: 'profile' },
+        ],
+      });
 
     res.status(200).json(bookings);
     console.log('Successful!');
