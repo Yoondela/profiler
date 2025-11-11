@@ -6,7 +6,8 @@ const getPortfolio = async (req, res) => {
   try {
     const providerId = req.params.providerId;
 
-    const portfolio = await Portfolio.findById(providerId);
+    const portfolio = await Portfolio.findOne({user: providerId})
+      .populate('user', 'name email avatarUrl');
 
     if (!portfolio) {
       return res.status(404).json({ message: 'Provider not found' });

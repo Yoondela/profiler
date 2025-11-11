@@ -7,9 +7,10 @@ const Portfolio = require('../models/Portfolio');
 describe('Portfolio API', () => {
 
   let portfolio;
+  let user;
 
   beforeAll(async () => {
-    const user = await User.create({
+    user = await User.create({
       name: 'Tester Provider',
       email: 'provider@test2.com',
       roles: ['provider'],
@@ -34,7 +35,7 @@ describe('Portfolio API', () => {
 
   test('should return provider portfolio when provider exists', async () => {
 
-    const res = await request(app).get(`/api/portfolios/${portfolio._id}`);
+    const res = await request(app).get(`/api/portfolios/${user._id}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('company', 'Tester Provider');

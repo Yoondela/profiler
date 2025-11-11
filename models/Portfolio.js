@@ -11,6 +11,7 @@ const portfolioSchema = new mongoose.Schema({
   servicesOffered: { type: [String], default: [] },
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
+  galleryPhotosUrls: { type: [String], default: [] },
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
