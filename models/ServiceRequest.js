@@ -18,13 +18,25 @@ const serviceRequestSchema = mongoose.Schema({
   },
   description: {
     type: String,
-    required: true,
-    minlength: 10,
+    required: false,
+    minlength: 200,
   },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'completed'],
     default: 'pending',
+  },
+  forAddress: {
+    type: String,
+    required: true,
+  },
+  note: {
+    type: String,
+    default: 'None given',
+  },
+  amount: {
+    type: Number,
+    default: 0,
   },
   requestedAt: {
     type: Date,
