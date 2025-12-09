@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const Portfolio = require('../models/Portfolio');
 
 const addGalleryPhotos = async (req, res) => {
-  console.log('Appending to gallery..');
+  console.log('Adding to gallery..');
   try {
     const portfolio = await Portfolio.findOne({ user: req.params.providerId });
     if (!portfolio) return res.status(404).json({ error: 'Not found' });
