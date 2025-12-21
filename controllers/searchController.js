@@ -4,6 +4,7 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 
 exports.searchProviders = async (req, res) => {
+  console.log('Searching..');
   console.log('Search query received:', req.query);
   try {
     const q = (req.query.q || '').trim();
@@ -43,11 +44,18 @@ exports.searchProviders = async (req, res) => {
           _id: user._id,
           name: user.name,
           company: portfolio?.company || '',
+          location: {
+            lat: portfolio?.location?.coordinates[1],
+            lng: portfolio?.location?.coordinates[0],
+          } || null,
           servicesOffered: portfolio?.servicesOffered || [],
           avatarUrl: profile?.avatarUrl || null,
+          logoUrl: portfolio?.logoUrl || null,
         };
       }),
     );
+
+    console.log('Successful!');
 
     return res.status(200).json(results.filter(Boolean));
   } catch (err) {

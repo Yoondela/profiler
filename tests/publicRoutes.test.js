@@ -58,6 +58,8 @@ describe('GET /api/providers/:id/public', () => {
       .get(`/api/providers/${providerUser._id}/public`)
       .expect(200);
 
+    console.log(res.body);
+
     // structure
     expect(res.body).toHaveProperty('user');
     expect(res.body).toHaveProperty('profile');
@@ -65,7 +67,6 @@ describe('GET /api/providers/:id/public', () => {
 
     // user
     expect(res.body.user.name).toBe('John Doe');
-    expect(res.body.user.roles).toContain('provider');
 
     // profile
     expect(res.body.profile.bio).toBe('Experienced cleaner');
@@ -76,6 +77,7 @@ describe('GET /api/providers/:id/public', () => {
     expect(Array.isArray(res.body.portfolio.galleryPhotos)).toBe(true);
     expect(res.body.portfolio.galleryPhotos.length).toBe(2);
     expect(res.body.portfolio.galleryPhotos[0]).toHaveProperty('url');
+    expect(res.body.portfolio.becameProviderAt).toBeDefined();
   });
 
   test('should return 404 for non-existing provider', async () => {

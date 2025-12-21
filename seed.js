@@ -14,6 +14,17 @@ const NUM_BOOKINGS = 20;
 const OWNER_EMAIL = 'yondela08@gmail.com';
 const services = ['Plumbing', 'Cleaning', 'Gardening', 'Tiling', 'Car Wash', 'Other'];
 
+// Cape Town Bounding Box (Approximate)
+const CAPE_TOWN_BOUNDS = {
+  latMin: -34.13,
+  latMax: -33.85,
+  lngMin: 18.35,
+  lngMax: 18.65,
+};
+
+const suburbs = ['Sea Point', 'Claremont', 'Bellville', 'Wynberg', 'Milnerton', 'Gardens', 'Hout Bay'];
+
+
 // ----------------- Helper -----------------
 
 const makePhone = () => {
@@ -22,16 +33,38 @@ const makePhone = () => {
 };
 
 const makePortfolio = (user) => {
+
+  // Generate random coordinates within Cape Town
+  const lat = faker.number.float({ min: CAPE_TOWN_BOUNDS.latMin, max: CAPE_TOWN_BOUNDS.latMax, precision: 0.000001 });
+  const lng = faker.number.float({ min: CAPE_TOWN_BOUNDS.lngMin, max: CAPE_TOWN_BOUNDS.lngMax, precision: 0.000001 });
+
+  const suburb = faker.helpers.arrayElement(suburbs);
+  const street = faker.location.streetAddress();
+
   return new Portfolio({
     user: user._id,
     company: faker.company.name(),
     servicesOffered: faker.helpers.arrayElements(services, faker.number.int({ min: 1, max: 3 })),
     logoUrl: faker.image.urlPicsumPhotos(),
     bannerUrl: faker.image.urlPicsumPhotos(),
-    galleryPhotosUrls: Array.from({ length: 5 }, () => faker.image.urlPicsumPhotos()),
+    galleryPhotos: Array.from({ length: 3 }, () => ({ url: faker.image.urlPicsumPhotos() })),
     email: user.email,
     phone: makePhone(),
-    address: faker.location.streetAddress(),
+    address: {
+      formatted: `${street}, ${suburb}, Cape Town, 8001, South Africa`,
+      street: street,
+      suburb: suburb,
+      city: 'Cape Town',
+      province: 'Western Cape',
+      postalCode: '8001',
+      country: 'South Africa',
+    },
+
+    // GeoJSON Location
+    location: {
+      type: 'Point',
+      coordinates: [lng, lat], // Note: MongoDB uses [Longitude, Latitude]
+    },
     bio: faker.person.jobDescriptor(),
     rating: faker.number.float({ min: 2, max: 5, precision: 0.1 }),
     completedJobs: faker.number.int({ min: 0, max: 100 }),
@@ -121,21 +154,27 @@ const seed = async () => {
         address: 'Cape Town, South Africa',
       });
 
+      // Inside the seed function for the owner:
       await Portfolio.create({
         user: me._id,
         company: 'My Startup',
         servicesOffered: ['Cleaning', 'Gardening'],
         email: OWNER_EMAIL,
         phone: makePhone(),
-        address: 'Cape Town, South Africa',
-        bio: 'Building better connections between clients and service providers.',
-        logoUrl: faker.image.urlPicsumPhotos(),
-        bannerUrl: faker.image.urlPicsumPhotos(),
-        galleryPhotosUrls: Array,
+        address: {
+          formatted: 'Cape Town, South Africa',
+          city: 'Cape Town',
+          country: 'South Africa',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [18.4233, -33.9249], // Cape Town City Center
+        },
         rating: 5,
         completedJobs: 42,
         becameProviderAt: new Date('2023-01-01'),
       });
+
 
       providers.push(me);
       console.log('✅ Created real owner account');

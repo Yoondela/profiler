@@ -1,21 +1,21 @@
 # Use a lightweight Node.js image
-FROM node:22
+FROM node:22-slim
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy only package files first (for better caching)
+# Copy dependency files first (better caching)
 COPY package*.json yarn.lock* ./
 
 # Install dependencies
 RUN yarn config set network-timeout 600000
 RUN yarn install
 
-# Copy rest of the code
+# Copy the rest of the app
 COPY . .
 
-# Expose your backend port
+# Expose backend port
 EXPOSE 3000
 
-# Define startup command
+# Start the app
 CMD ["yarn", "start"]

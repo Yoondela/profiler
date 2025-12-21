@@ -4,6 +4,7 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 
 exports.getPublicProvider = async (req, res) => {
+  console.log('Getting public provider profile..');
   try {
     const { id } = req.params;
 
@@ -22,10 +23,35 @@ exports.getPublicProvider = async (req, res) => {
     }
 
     return res.status(200).json({
-      user,
-      profile,
-      portfolio,
+      user: {
+        email: user.email,
+        name: user.name,
+      },
+      profile : {
+        phone: profile.phone,
+        address: profile.address,
+        bio: profile.bio,
+        avatarUrl: profile.avatarUrl,
+      },
+      portfolio : {
+        company: portfolio.company,
+        servicesOffered: portfolio.servicesOffered,
+        otherSkills: portfolio.otherSkills,
+        logoUrl: portfolio.logoUrl,
+        bannerUrl: portfolio.bannerUrl,
+        galleryPhotos: portfolio.galleryPhotos,
+        email: portfolio.email,
+        phone: portfolio.phone,
+        address: portfolio.address,
+        location: portfolio.location,
+        about: portfolio.about,
+        rating: portfolio.rating,
+        completedJobs: portfolio.completedJobs,
+        becameProviderAt: portfolio.becameProviderAt,
+      },
     });
+
+    console.log('Successful!');
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
