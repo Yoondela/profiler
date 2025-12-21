@@ -11,6 +11,6 @@ describe('geocodeAddress', () => {
   });
 
   it('should throw if address is missing', async () => {
-    await expect(geocodeAddress()).rejects.toThrow('Address is required');
+    await expect(geocodeAddress()).rejects.toThrow('address is required');
   });
 });

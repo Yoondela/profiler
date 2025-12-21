@@ -39,6 +39,8 @@ app.use('/api/portfolios', require('./routes/portfolioRoutes'));
 app.use('/api', require('./routes/serviceBookingsRoutes'));
 app.use('/api/providers', require('./routes/publicRoutes'));
 app.use('/api/providers', require('./routes/searchRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
+
 
 app.get('/api/health', (_, res) => res.send('Profiler backend is live'));
 

@@ -5,6 +5,7 @@ const { faker } = require('@faker-js/faker');
 const User = require('./models/User');
 const Profile = require('./models/Profile');
 const Portfolio = require('./models/Portfolio');
+const Category = require('./models/Category');
 const ServiceBooking = require('./models/ServiceBooking');
 
 dotenv.config();
@@ -44,7 +45,9 @@ const makePortfolio = (user) => {
   return new Portfolio({
     user: user._id,
     company: faker.company.name(),
+    about: faker.lorem.paragraph(),
     servicesOffered: faker.helpers.arrayElements(services, faker.number.int({ min: 1, max: 3 })),
+    otherSkills: faker.helpers.arrayElements(['Painting', 'Electrical', 'Carpentry', 'Landscaping'], faker.number.int({ min: 0, max: 2 })),
     logoUrl: faker.image.urlPicsumPhotos(),
     bannerUrl: faker.image.urlPicsumPhotos(),
     galleryPhotos: Array.from({ length: 3 }, () => ({ url: faker.image.urlPicsumPhotos() })),
@@ -90,6 +93,13 @@ const makeBooking = (client, provider) => {
   });
 };
 
+const makeCategory = (name) => {
+  return {
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, '-'),
+  };
+};
+
 // ----------------- Main Seed Function -----------------
 const seed = async () => {
   try {
@@ -106,6 +116,20 @@ const seed = async () => {
     const users = [];
     const providers = [];
     const clients = [];
+
+    // ---------- Seed Categories ----------
+    const categoryData = services.map(makeCategory);
+
+    for (const category of categoryData) {
+      await Category.updateOne(
+        { slug: category.slug },
+        { $setOnInsert: category },
+        { upsert: true },
+      );
+    }
+
+    console.log(`✅ Seeded ${categoryData.length} categories`);
+
 
     // ---------- Seed Fake Users ----------
     for (let i = 0; i < NUM_USERS; i++) {
