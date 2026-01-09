@@ -10,10 +10,22 @@ const ServiceBooking = require('./models/ServiceBooking');
 
 dotenv.config();
 
-const NUM_USERS = 10;
+const NUM_USERS = 100;
 const NUM_BOOKINGS = 20;
 const OWNER_EMAIL = 'yondela08@gmail.com';
-const services = ['Plumbing', 'Cleaning', 'Gardening', 'Tiling', 'Car Wash', 'Other'];
+const services = [
+  'Baby Sitting',
+  'House Cleaning',
+  'Gardening',
+  'Dog Grooming',
+  'Car Wash',
+  'Hair Dressing',
+  'Swimming Pool Cleaning',
+  'Photographer',
+  'Food Catering',
+  'Deco',
+  'Other',
+];
 
 // Cape Town Bounding Box (Approximate)
 const CAPE_TOWN_BOUNDS = {

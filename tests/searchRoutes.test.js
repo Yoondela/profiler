@@ -6,11 +6,10 @@ const User = require('../models/User');
 const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 
-describe('GET /api/providers/search', () => {
+describe('GET /api/providers/search (paginated)', () => {
   let providerUser;
 
   beforeAll(async () => {
-
     providerUser = await User.create({
       name: 'Sam Scholes',
       email: 'sam@test.com',
@@ -33,17 +32,26 @@ describe('GET /api/providers/search', () => {
     await Portfolio.deleteMany();
     await Profile.deleteMany();
     await User.deleteMany();
+    await mongoose.connection.close();
   });
 
-  test('should return providers matching name, company, or service', async () => {
+  test('returns paginated providers matching query', async () => {
     const res = await request(app)
-      .get('/api/providers/search?q=photo')
+      .get('/api/providers/search')
+      .query({ q: 'photo', page: 1, limit: 6 })
       .expect(200);
 
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(1);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body).toHaveProperty('total');
+    expect(res.body).toHaveProperty('page');
+    expect(res.body).toHaveProperty('totalPages');
 
-    const provider = res.body[0];
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.total).toBe(1);
+    expect(res.body.page).toBe(1);
+
+    const provider = res.body.data[0];
 
     expect(provider._id.toString()).toBe(providerUser._id.toString());
     expect(provider.name).toBe('Sam Scholes');
@@ -52,11 +60,14 @@ describe('GET /api/providers/search', () => {
     expect(provider.avatarUrl).toBe('https://test.com/avatar.jpg');
   });
 
-  test('should return empty array for no matches', async () => {
+  test('returns empty data array when no matches found', async () => {
     const res = await request(app)
-      .get('/api/providers/search?q=banana')
+      .get('/api/providers/search')
+      .query({ q: 'banana', page: 1, limit: 6 })
       .expect(200);
 
-    expect(res.body).toEqual([]);
+    expect(res.body.data).toEqual([]);
+    expect(res.body.total).toBe(0);
+    expect(res.body.totalPages).toBe(0);
   });
 });

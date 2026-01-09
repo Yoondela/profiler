@@ -52,6 +52,9 @@ const portfolioSchema = new mongoose.Schema({
   becameProviderAt: { type: Date, default: null },
 });
 
+portfolioSchema.index({ company: 1 });
+portfolioSchema.index({ servicesOffered: 1 });
+
 portfolioSchema.index({ location: '2dsphere' });
 
 

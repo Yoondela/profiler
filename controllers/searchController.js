@@ -5,25 +5,40 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Category = require('../models/Category');
 
+
 exports.searchProviders = async (req, res) => {
-  console.log('Searching providers..');
-  console.log(req.query);
   try {
     const q = (req.query.q || '').trim();
-    if (!q) return res.status(200).json([]);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 6, 20);
 
+    if (!q) {
+      return res.status(200).json({
+        data: [],
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      });
+    }
+
+    const regex = new RegExp(q, 'i');
+
+    // 1️⃣ Find matching portfolios
     const matchedPortfolios = await Portfolio.find({
       $or: [
-        { company: new RegExp(q, 'i') },
-        { servicesOffered: { $in: [new RegExp(q, 'i')] } },
+        { company: regex },
+        { servicesOffered: { $in: [regex] } },
       ],
-    });
+    }).select('user');
 
+    // 2️⃣ Find matching users
     const matchedUsers = await User.find({
       roles: 'provider',
-      name: new RegExp(q, 'i'),
-    });
+      name: regex,
+    }).select('_id');
 
+    // 3️⃣ Merge + dedupe provider IDs
     const providerIds = [
       ...matchedUsers.map((u) => u._id.toString()),
       ...matchedPortfolios.map((p) => p.user.toString()),
@@ -31,40 +46,55 @@ exports.searchProviders = async (req, res) => {
 
     const uniqueIds = [...new Set(providerIds)];
 
-    const results = await Promise.all(
-      uniqueIds.map(async (id) => {
-        const user = await User.findById(id);
-        if (!user) return null;
+    const total = uniqueIds.length;
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
 
-        const profile = await Profile.findOne({ user: id });
-        const portfolio = await Portfolio.findOne({ user: id });
+    // 4️⃣ Paginate IDs (IMPORTANT)
+    const paginatedIds = uniqueIds.slice(skip, skip + limit);
 
-        let location = null;
+    // 5️⃣ Fetch provider data efficiently
+    const users = await User.find({ _id: { $in: paginatedIds } }).lean();
+    const profiles = await Profile.find({ user: { $in: paginatedIds } }).lean();
+    const portfolios = await Portfolio.find({ user: { $in: paginatedIds } }).lean();
 
-        if (
-          portfolio?.location?.coordinates &&
-          portfolio.location.coordinates.length === 2
-        ) {
-          location = {
-            lat: portfolio.location.coordinates[1],
-            lng: portfolio.location.coordinates[0],
-          };
-        }
+    // 6️⃣ Normalize data
+    const data = users.map((user) => {
+      const profile = profiles.find(
+        (p) => p.user.toString() === user._id.toString(),
+      );
+      const portfolio = portfolios.find(
+        (p) => p.user.toString() === user._id.toString(),
+      );
 
-        return {
-          _id: user._id,
-          name: user.name,
-          company: portfolio?.company || '',
-          location,
-          servicesOffered: portfolio?.servicesOffered || [],
-          avatarUrl: profile?.avatarUrl || null,
-          logoUrl: portfolio?.logoUrl || null,
+      let location = null;
+      if (
+        portfolio?.location?.coordinates?.length === 2
+      ) {
+        location = {
+          lat: portfolio.location.coordinates[1],
+          lng: portfolio.location.coordinates[0],
         };
-      }),
-    );
+      }
 
-    console.log('Sucsessful!');
-    return res.status(200).json(results.filter(Boolean));
+      return {
+        _id: user._id,
+        name: user.name,
+        company: portfolio?.company || '',
+        servicesOffered: portfolio?.servicesOffered || [],
+        avatarUrl: profile?.avatarUrl || null,
+        logoUrl: portfolio?.logoUrl || null,
+        location,
+      };
+    });
+
+    return res.status(200).json({
+      data,
+      page,
+      limit,
+      total,
+      totalPages,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -153,6 +183,41 @@ exports.autocomplete = async (req, res) => {
 
     console.log('Companies found:', companies);
 
+    // ---------------- Users ----------------
+    let users = [];
+
+    if (isTestEnv) {
+      users = await User.find({
+        name: { $regex: `^${q}`, $options: 'i' },
+      })
+        .limit(5)
+        .select({ name: 1, _id: 0 })
+        .lean();
+
+      users = users.map((u) => ({ label: u.name }));
+    } else {
+      users = await User.aggregate([
+        {
+          $search: {
+            index: 'user_autocomplete',
+            autocomplete: {
+              query: q,
+              path: 'name',
+            },
+          },
+        },
+        { $limit: 5 },
+        {
+          $project: {
+            label: '$name',
+            _id: 0,
+          },
+        },
+      ]);
+    }
+
+    console.log('Users found:', users);
+
     // ---------------- Services ----------------
     let services = [];
 
@@ -197,6 +262,7 @@ exports.autocomplete = async (req, res) => {
     const results = [
       ...categories.map((c) => ({ type: 'category', label: c.label })),
       ...companies.map((c) => ({ type: 'provider', label: c.label })),
+      ...users.map((c) => ({ type: 'user', label: c.label })),
       ...services.map((s) => ({ type: 'service', label: s.label })),
     ];
 
