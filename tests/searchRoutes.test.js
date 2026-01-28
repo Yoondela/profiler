@@ -23,7 +23,6 @@ describe('GET /api/providers/search (paginated)', () => {
 
     await Portfolio.create({
       user: providerUser._id,
-      company: 'Kodak Studio',
       servicesOffered: ['photoshoot', 'editing'],
     });
   });
@@ -55,7 +54,6 @@ describe('GET /api/providers/search (paginated)', () => {
 
     expect(provider._id.toString()).toBe(providerUser._id.toString());
     expect(provider.name).toBe('Sam Scholes');
-    expect(provider.company).toBe('Kodak Studio');
     expect(provider.servicesOffered).toContain('photoshoot');
     expect(provider.avatarUrl).toBe('https://test.com/avatar.jpg');
   });

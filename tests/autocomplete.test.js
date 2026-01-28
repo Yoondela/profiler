@@ -26,7 +26,6 @@ describe('GET /api/search/autocomplete', () => {
 
     await Portfolio.create({
       user: user._id,
-      company: 'Kodak Studio',
       address: {
         formatted: 'Cape Town, South Africa',
       },

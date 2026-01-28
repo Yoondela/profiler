@@ -16,7 +16,6 @@ describe('Portfolio Gallery API', () => {
 
     portfolio = await Portfolio.create({
       user: user._id,
-      company: 'Gallery Co',
       galleryPhotos: [
         { url: '1.jpg' },
         { url: '2.jpg' },

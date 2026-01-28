@@ -7,7 +7,11 @@ const portfolioSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  company: { type: String, required: true ,default: '' },
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    default: null,
+  },
   servicesOffered: { type: [String], default: [] },
   otherSkills: { type: [String], default: [] },
   logoUrl: { type: String, default: null },
@@ -44,7 +48,6 @@ const portfolioSchema = new mongoose.Schema({
       default: undefined,
     },
   },
-
 
   bio: { type: String, default: '' },
   rating: { type: Number, default: 0 },

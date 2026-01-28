@@ -125,110 +125,110 @@ const seed = async () => {
       ServiceBooking.deleteMany(),
     ]);
 
-    const users = [];
-    const providers = [];
-    const clients = [];
+    // const users = [];
+    // const providers = [];
+    // const clients = [];
 
-    // ---------- Seed Categories ----------
-    const categoryData = services.map(makeCategory);
+    // // ---------- Seed Categories ----------
+    // const categoryData = services.map(makeCategory);
 
-    for (const category of categoryData) {
-      await Category.updateOne(
-        { slug: category.slug },
-        { $setOnInsert: category },
-        { upsert: true },
-      );
-    }
+    // for (const category of categoryData) {
+    //   await Category.updateOne(
+    //     { slug: category.slug },
+    //     { $setOnInsert: category },
+    //     { upsert: true },
+    //   );
+    // }
 
-    console.log(`✅ Seeded ${categoryData.length} categories`);
-
-
-    // ---------- Seed Fake Users ----------
-    for (let i = 0; i < NUM_USERS; i++) {
-      const isProvider = faker.datatype.boolean();
-
-      const user = new User({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        roles: isProvider ? ['provider'] : ['client'],
-      });
-      await user.save();
-
-      const profile = new Profile({
-        user: user._id,
-        bio: faker.person.jobTitle(),
-        phone: makePhone(),
-      });
-      await profile.save();
-
-      if (isProvider) {
-        const portfolio = makePortfolio(user);
-        await portfolio.save();
-        providers.push(user);
-      } else {
-        clients.push(user);
-      }
-
-      users.push({ user, profile });
-    }
-
-    console.log(`✅ Seeded ${NUM_USERS} fake users`);
-
-    // ---------- Ensure Real Owner ----------
-    let me = await User.findOne({ email: OWNER_EMAIL });
-    if (!me) {
-      me = await User.create({
-        name: 'Yondela Hlongwane',
-        email: OWNER_EMAIL,
-        roles: ['provider', 'admin'],
-      });
-
-      await Profile.create({
-        user: me._id,
-        bio: 'Founder of the platform',
-        phone: makePhone(),
-        address: 'Cape Town, South Africa',
-      });
-
-      // Inside the seed function for the owner:
-      await Portfolio.create({
-        user: me._id,
-        company: 'My Startup',
-        servicesOffered: ['Cleaning', 'Gardening'],
-        email: OWNER_EMAIL,
-        phone: makePhone(),
-        address: {
-          formatted: 'Cape Town, South Africa',
-          city: 'Cape Town',
-          country: 'South Africa',
-        },
-        location: {
-          type: 'Point',
-          coordinates: [18.4233, -33.9249], // Cape Town City Center
-        },
-        rating: 5,
-        completedJobs: 42,
-        becameProviderAt: new Date('2023-01-01'),
-      });
+    // console.log(`✅ Seeded ${categoryData.length} categories`);
 
 
-      providers.push(me);
-      console.log('✅ Created real owner account');
-    } else {
-      console.log('ℹ️ Real owner already exists');
-      providers.push(me);
-    }
+    // // ---------- Seed Fake Users ----------
+    // for (let i = 0; i < NUM_USERS; i++) {
+    //   const isProvider = faker.datatype.boolean();
 
-    // ---------- Seed Service Bookings ----------
-    const bookings = [];
-    for (let i = 0; i < NUM_BOOKINGS; i++) {
-      const client = faker.helpers.arrayElement(clients);
-      const provider = faker.helpers.arrayElement(providers);
-      if (!client || !provider) continue;
-      const booking = makeBooking(client, provider);
-      await booking.save();
-      bookings.push(booking);
-    }
+    //   const user = new User({
+    //     name: faker.person.fullName(),
+    //     email: faker.internet.email(),
+    //     roles: isProvider ? ['provider'] : ['client'],
+    //   });
+    //   await user.save();
+
+    //   const profile = new Profile({
+    //     user: user._id,
+    //     bio: faker.person.jobTitle(),
+    //     phone: makePhone(),
+    //   });
+    //   await profile.save();
+
+    //   if (isProvider) {
+    //     const portfolio = makePortfolio(user);
+    //     await portfolio.save();
+    //     providers.push(user);
+    //   } else {
+    //     clients.push(user);
+    //   }
+
+    //   users.push({ user, profile });
+    // }
+
+    // console.log(`✅ Seeded ${NUM_USERS} fake users`);
+
+    // // ---------- Ensure Real Owner ----------
+    // let me = await User.findOne({ email: OWNER_EMAIL });
+    // if (!me) {
+    //   me = await User.create({
+    //     name: 'Yondela Hlongwane',
+    //     email: OWNER_EMAIL,
+    //     roles: ['provider', 'admin'],
+    //   });
+
+    //   await Profile.create({
+    //     user: me._id,
+    //     bio: 'Founder of the platform',
+    //     phone: makePhone(),
+    //     address: 'Cape Town, South Africa',
+    //   });
+
+    //   // Inside the seed function for the owner:
+    //   await Portfolio.create({
+    //     user: me._id,
+    //     company: 'My Startup',
+    //     servicesOffered: ['Cleaning', 'Gardening'],
+    //     email: OWNER_EMAIL,
+    //     phone: makePhone(),
+    //     address: {
+    //       formatted: 'Cape Town, South Africa',
+    //       city: 'Cape Town',
+    //       country: 'South Africa',
+    //     },
+    //     location: {
+    //       type: 'Point',
+    //       coordinates: [18.4233, -33.9249], // Cape Town City Center
+    //     },
+    //     rating: 5,
+    //     completedJobs: 42,
+    //     becameProviderAt: new Date('2023-01-01'),
+    //   });
+
+
+    //   providers.push(me);
+    //   console.log('✅ Created real owner account');
+    // } else {
+    //   console.log('ℹ️ Real owner already exists');
+    //   providers.push(me);
+    // }
+
+    // // ---------- Seed Service Bookings ----------
+    // const bookings = [];
+    // for (let i = 0; i < NUM_BOOKINGS; i++) {
+    //   const client = faker.helpers.arrayElement(clients);
+    //   const provider = faker.helpers.arrayElement(providers);
+    //   if (!client || !provider) continue;
+    //   const booking = makeBooking(client, provider);
+    //   await booking.save();
+    //   bookings.push(booking);
+    // }
 
     console.log(`✅ Seeded ${NUM_BOOKINGS} service bookings`);
     console.log('🎉 Seeding complete');

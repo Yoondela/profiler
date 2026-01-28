@@ -29,7 +29,6 @@ describe('GET /api/providers/:id/public', () => {
 
     portfolio = await Portfolio.create({
       user: providerUser._id,
-      company: 'CleanCo',
       servicesOffered: ['cleaning', 'deep cleaning'],
       otherSkills: ['ironing'],
       logoUrl: 'https://logo.com/logo.png',

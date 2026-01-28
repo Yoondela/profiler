@@ -6,11 +6,11 @@ const becomeProvider = async (req, res) => {
   console.log('Upgrading user to provider..');
   try {
     const { id } = req.params;
-    const { company, address } = req.body;
+    const { address } = req.body;
 
     // Validate required fields
-    if (!company || !address || !address.formatted) {
-      return res.status(400).json({ message: 'Company and address are required to become a provider' });
+    if (!address || !address.formatted) {
+      return res.status(400).json({ message: 'address is required to become a provider' });
     }
 
     const user = await User.findById(id);
@@ -30,7 +30,6 @@ const becomeProvider = async (req, res) => {
     if (!portfolio) {
       portfolio = await Portfolio.create({
         user: user._id,
-        company,
         address,
         servicesOffered: [],
         bio: '',

@@ -18,7 +18,6 @@ describe('Portfolio API', () => {
 
     portfolio = await Portfolio.create({
       user: user._id,
-      company: 'Tester Provider',
       servicesOffered: ['gardening', 'tiling'],
       bio: 'I do great work',
       bannerUrl: 'some-banner-url',
@@ -38,7 +37,6 @@ describe('Portfolio API', () => {
     const res = await request(app).get(`/api/portfolios/${user._id}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('company', 'Tester Provider');
     expect(res.body.servicesOffered).toContain('gardening');
     expect(res.body.rating).toBe(4.7);
   });
@@ -58,7 +56,6 @@ describe('PATCH /api/portfolios/:providerId', () => {
 
     portfolio = await Portfolio.create({
       user: user._id,
-      company: 'Tester Provider',
       servicesOffered: ['gardening', 'tiling'],
       bio: 'I do great work',
       bannerUrl: 'some-banner-url',

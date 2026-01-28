@@ -13,7 +13,8 @@ const getPortfolio = async (req, res) => {
           path: 'profile',
           model: 'Profile',
         },
-      });
+      })
+      .populate('company');
 
     if (!portfolio) {
       return res.status(404).json({ message: 'Provider not found' });
@@ -47,6 +48,7 @@ const updatePortfolio = async (req, res) => {
 
     await portfolio.save();
 
+    console.log(portfolio);
     console.log('Successful!');
 
     return res.status(200).json(portfolio);

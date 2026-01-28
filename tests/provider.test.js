@@ -29,7 +29,6 @@ describe('become provider API', () => {
     const res = await request(app)
       .patch(`/api/users/${user._id}/upgrade-to-provider`)
       .send({
-        company: 'Test Company',
         address: {
           formatted: 'Cape Town, South Africa',
           placeId: 'test-place-id',
@@ -42,7 +41,6 @@ describe('become provider API', () => {
       'Cape Town, South Africa',
     );
 
-    expect(res.body.portfolio.company).toBe('Test Company');
     expect(res.body.portfolio.location.coordinates).toEqual([
       18.4241,
       -33.9249,
@@ -53,7 +51,6 @@ describe('become provider API', () => {
     const firstRes = await request(app)
       .patch(`/api/users/${user._id}/upgrade-to-provider`)
       .send({
-        company: 'Test Company',
         address: {
           formatted: 'Cape Town, South Africa',
           placeId: 'test-place-id',
@@ -65,7 +62,6 @@ describe('become provider API', () => {
     const secondRes = await request(app)
       .patch(`/api/users/${user._id}/upgrade-to-provider`)
       .send({
-        company: 'Test Company',
         address: {
           formatted: 'Cape Town, South Africa',
           placeId: 'test-place-id',
@@ -79,7 +75,7 @@ describe('become provider API', () => {
     expect(secondDate).toBe(firstDate);
   });
 
-  it('should reject becoming provider without company and address', async () => {
+  it('should reject becoming provider without address', async () => {
     const res = await request(app)
       .patch(`/api/users/${user._id}/upgrade-to-provider`)
       .send({});
