@@ -1,4 +1,4 @@
-// tests/setup.js
+tests/setup.js;
 const mongoose = require('mongoose');
 require('dotenv').config();
 
