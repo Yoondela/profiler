@@ -96,6 +96,66 @@ const getCompany = async (req, res) => {
   }
 };
 
+const getCompanyMembers = async (req, res) => {
+  console.log('Getting Company Members..');
+  try {
+    const { companyId } = req.params;
+
+    const company = await Company.findById(companyId).lean();
+    if (!company) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+
+    if (!company.members || company.members.length === 0) {
+      return res.json([]);
+    }
+
+    const members = await Portfolio.aggregate([
+      {
+        $match: {
+          _id: { $in: company.members },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'user._id',
+          foreignField: 'user',
+          as: 'profile',
+        },
+      },
+      {
+        $unwind: {
+          path: '$profile',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          portfolioId: '$_id',
+          name: '$user.name',
+          avatarUrl: '$profile.avatarUrl',
+        },
+      },
+    ]);
+
+    res.json(members);
+    console.log('Successful!');
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
-module.exports = { createCompany, getCompany };
+
+module.exports = { createCompany, getCompany, getCompanyMembers };

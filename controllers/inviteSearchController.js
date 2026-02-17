@@ -41,6 +41,20 @@ const memberSearch = async (req, res) => {
       },
       { $unwind: '$user' },
       {
+        $lookup: {
+          from: 'profiles',
+          localField: 'user._id',
+          foreignField: 'user',
+          as: 'profile',
+        },
+      },
+      {
+        $unwind: {
+          path: '$profile',
+          preserveNullAndEmptyArrays: true, // important
+        },
+      },
+      {
         $match: {
           'user.name': { $regex: q, $options: 'i' },
         },
@@ -50,7 +64,7 @@ const memberSearch = async (req, res) => {
           portfolioId: '$_id',
           userId: '$user._id',
           name: '$user.name',
-          avatarUrl: 1,
+          avatarUrl: '$profile.avatarUrl',
         },
       },
       { $limit: 10 },

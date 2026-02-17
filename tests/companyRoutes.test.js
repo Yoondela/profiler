@@ -1,6 +1,8 @@
 const request = require('supertest');
 const app = require('../app');
+
 const User = require('../models/User');
+const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
 
@@ -183,5 +185,84 @@ describe('create company API', () => {
     expect(Array.isArray(company.members)).toBe(true);
     expect(company.members.length).toBeGreaterThan(0);
     expect(new Set(company.members).size).toBe(company.members.length);
+  });
+});
+
+describe.only('GET /api/company/:companyId/members', () => {
+
+  let owner;
+  let memberUser;
+  let memberPortfolio;
+  let company;
+
+  beforeAll(async () => {
+    await User.deleteMany();
+    await Profile.deleteMany();
+    await Portfolio.deleteMany();
+    await Company.deleteMany();
+
+    owner = await User.create({
+      name: 'Owner User',
+      email: 'owner@test.com',
+      roles: ['provider'],
+    });
+
+    memberUser = await User.create({
+      name: 'Alice Photo',
+      email: 'alice@test.com',
+      roles: ['provider'],
+    });
+
+    await Profile.create({
+      user: memberUser._id,
+      avatarUrl: 'https://test.com/avatar.jpg',
+    });
+
+    memberPortfolio = await Portfolio.create({
+      user: memberUser._id,
+    });
+
+    company = await Company.create({
+      name: 'CleanCo',
+      owner: owner._id,
+      members: [memberPortfolio._id],
+    });
+  });
+
+  afterAll(async () => {
+    await User.deleteMany();
+    await Profile.deleteMany();
+    await Portfolio.deleteMany();
+    await Company.deleteMany();
+  });
+
+
+  test('returns all company members with name and avatar', async () => {
+    const res = await request(app)
+      .get(`/api/company/${company._id}/members`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBe(1);
+
+    const member = res.body[0];
+
+    expect(member).toHaveProperty('portfolioId');
+    expect(member).toHaveProperty('name', 'Alice Photo');
+    expect(member).toHaveProperty('avatarUrl', 'https://test.com/avatar.jpg');
+  });
+
+  test('returns empty array when company has no members', async () => {
+    const emptyCompany = await Company.create({
+      name: 'EmptyCo',
+      owner: owner._id,
+      members: [],
+    });
+
+    const res = await request(app)
+      .get(`/api/company/${emptyCompany._id}/members`)
+      .expect(200);
+
+    expect(res.body).toEqual([]);
   });
 });
