@@ -127,5 +127,5 @@ const respondToInvite = async (req, res) => {
   }
 };
 
-module.exports = {inviteMember, getProviderInvites, respondToInvite};
+module.exports = { inviteMember, getProviderInvites, respondToInvite };
 

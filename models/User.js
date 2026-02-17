@@ -35,4 +35,6 @@ userSchema.methods.hasRole = function (role) {
   return this.roles && this.roles.includes(role);
 };
 
+userSchema.index({ name: 1 });
+
 module.exports = mongoose.model('User', userSchema);
