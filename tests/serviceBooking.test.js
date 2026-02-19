@@ -11,6 +11,10 @@ jest.setTimeout(20000);
 describe('ServiceBooking API', () => {
 
   beforeAll(async () => {
+
+    await ServiceBooking.deleteMany({});
+    await User.deleteMany({});
+
     // create test client
     clientUser = await User.create({
       name: 'Test Client',

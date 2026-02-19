@@ -42,6 +42,7 @@ app.use('/api/providers', require('./routes/searchRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/company', require('./routes/companyRoutes'));
 app.use('/api/invites', require('./routes/companyInvitesRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.get('/api/health', (_, res) => res.send('Profiler backend is live'));
 

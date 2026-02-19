@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
 const CompanyInvite = require('../models/CompanyInvite');
+const Notification = require('../models/Notification');
 
 let ownerUser;
 let providerUser;
@@ -17,6 +18,8 @@ beforeAll(async () => {
   await Portfolio.deleteMany();
   await Company.deleteMany();
   await CompanyInvite.deleteMany();
+  await Notification.deleteMany();
+
 
   ownerUser = await User.create({
     name: 'Owner',
@@ -56,6 +59,20 @@ describe('POST /api/invites/:companyId/invite', () => {
     expect(res.body.invite.company).toBe(company._id.toString());
     expect(res.body.invite.portfolio).toBe(providerPortfolio._id.toString());
     expect(res.body.invite.status).toBe('pending');
+
+    const notification = await Notification.findOne({
+      user: providerUser._id,
+      type: 'company_invite',
+      entityType: 'CompanyInvite',
+      entityId: res.body.invite._id,
+    }).lean();
+
+    console.log('Notification:', notification);
+
+    expect(notification).toBeTruthy();
+    expect(notification.title).toBe(`Invite to join ${company.name}`);
+    expect(notification.message).toBe(`You have been invited to join ${company.name}.`);
+    expect(notification.actions).toEqual(['accept', 'reject']);
   });
 });
 

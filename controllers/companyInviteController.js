@@ -1,6 +1,8 @@
 const Company = require('../models/Company');
 const Portfolio = require('../models/Portfolio');
 const CompanyInvite = require('../models/CompanyInvite');
+const Notification = require('../models/Notification');
+
 
 const inviteMember = async (req, res) => {
   console.log('Inviting Member..');
@@ -43,6 +45,16 @@ const inviteMember = async (req, res) => {
       company: company._id,
       portfolio: portfolio._id,
       invitedBy: invitedBy,
+    });
+
+    await Notification.create({
+      user: portfolio.user,
+      type: 'company_invite',
+      title: `Invite to join ${company.name}`,
+      message: `You have been invited to join ${company.name}.`,
+      entityType: 'CompanyInvite',
+      entityId: invite._id,
+      actions: ['accept', 'reject'],
     });
 
     console.log('Succesful!');
@@ -106,7 +118,6 @@ const respondToInvite = async (req, res) => {
     }
 
     if (action === 'accept') {
-      // 1️⃣ Add portfolio to company members
       await Company.findByIdAndUpdate(invite.company, {
         $addToSet: { members: invite.portfolio },
       });

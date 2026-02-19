@@ -188,7 +188,7 @@ describe('create company API', () => {
   });
 });
 
-describe.only('GET /api/company/:companyId/members', () => {
+describe('GET /api/company/:companyId/members', () => {
 
   let owner;
   let memberUser;
