@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
-const { geocodeAddress } = require('../services/geocodeAddress');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 
 const becomeProvider = async (req, res) => {
   console.log('Upgrading user to provider..');

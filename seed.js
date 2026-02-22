@@ -7,6 +7,10 @@ const Profile = require('./models/Profile');
 const Portfolio = require('./models/Portfolio');
 const Category = require('./models/Category');
 const ServiceBooking = require('./models/ServiceBooking');
+const ServiceRequest = require('./models/ServiceRequest');
+const Notification = require('./models/Notification');
+const Company = require('./models/Company');
+const CompanyInvite = require('./models/CompanyInvite');
 
 dotenv.config();
 
@@ -123,6 +127,12 @@ const seed = async () => {
       Profile.deleteMany(),
       Portfolio.deleteMany(),
       ServiceBooking.deleteMany(),
+      Category.deleteMany(),
+      ServiceBooking.deleteMany(),
+      ServiceRequest.deleteMany(),
+      Notification.deleteMany(),
+      Company.deleteMany(),
+      CompanyInvite.deleteMany(),
     ]);
 
     // const users = [];

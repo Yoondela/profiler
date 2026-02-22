@@ -2,6 +2,12 @@ const Company = require('../models/Company');
 const Portfolio = require('../models/Portfolio');
 const CompanyInvite = require('../models/CompanyInvite');
 const Notification = require('../models/Notification');
+const { sendNotification } = require('../services/sockeClient');
+
+
+jest.mock('../services/sockeClient', () => ({
+  sendNotification: jest.fn().mockResolvedValue({ status: 'sent' }),
+}));
 
 
 const inviteMember = async (req, res) => {
@@ -47,7 +53,7 @@ const inviteMember = async (req, res) => {
       invitedBy: invitedBy,
     });
 
-    await Notification.create({
+    const notificationData = await Notification.create({
       user: portfolio.user,
       type: 'company_invite',
       title: `Invite to join ${company.name}`,
@@ -56,6 +62,8 @@ const inviteMember = async (req, res) => {
       entityId: invite._id,
       actions: ['accept', 'reject'],
     });
+
+    await sendNotification(notificationData);
 
     console.log('Succesful!');
 

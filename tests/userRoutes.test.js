@@ -37,6 +37,17 @@ describe('User endpoints', () => {
     }
   });
 
+  test('GET /api/users/me', async () => {
+    const user = new User({ name: 'GetMe', email: `getme${Date.now()}@ex.com` });
+    await user.save();
+
+    const res = await request(app).get(`/api/users/id/${user._id}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('name', 'GetMe');
+    expect(res.body).toHaveProperty('email', user.email);
+  });
+
+
   test('GET /api/users/id/:id retrieves user by ID', async () => {
     const user = new User({ name: 'FetchMe', email: `fetchme${Date.now()}@ex.com` });
     await user.save();
@@ -53,7 +64,6 @@ describe('User endpoints', () => {
     await user.save();
 
     const res = await request(app).get(`/api/users/email/${uniqueEmail}`);
-    console.log('GET by email response body:', res.body);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('name', 'EmailFetch');
     expect(res.body).toHaveProperty('email', uniqueEmail);
@@ -74,5 +84,29 @@ describe('User endpoints', () => {
     const deletedProfile = await Profile.findOne({ user: user._id });
     expect(deletedUser).toBeNull();
     expect(deletedProfile).toBeNull();
+  });
+});
+
+describe('GET /api/users/me', () => {
+  beforeAll(async () => {
+    await User.deleteMany({});
+  });
+  it('returns the currently authenticated user', async () => {
+    const auth0Id = 'auth0|test123';
+
+    const user = await User.create({
+      name: 'Yondela',
+      email: 'test@test.com',
+      auth0Id,
+    });
+
+    const response = await request(app)
+      .get('/api/users/me')
+      .set('Authorization', `Bearer ${auth0Id}`)
+      .expect(200);
+
+    expect(response.body.email).toEqual(user.email);
+    expect(response.body.auth0Id).toEqual(auth0Id);
+    expect(response.body._id).toEqual(user._id.toString());
   });
 });

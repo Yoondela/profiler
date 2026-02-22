@@ -57,8 +57,6 @@ describe('GET /api/providers/:id/public', () => {
       .get(`/api/providers/${providerUser._id}/public`)
       .expect(200);
 
-    console.log(res.body);
-
     // structure
     expect(res.body).toHaveProperty('user');
     expect(res.body).toHaveProperty('profile');

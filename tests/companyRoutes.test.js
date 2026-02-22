@@ -6,11 +6,11 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
 
-jest.mock('../services/geocodeAddress', () => ({
+jest.mock('../helper/geocodeAddress', () => ({
   geocodeAddress: jest.fn(),
 }));
 
-const { geocodeAddress } = require('../services/geocodeAddress');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 
 describe('create company API', () => {
   let user;
@@ -154,8 +154,6 @@ describe('create company API', () => {
   test('should return company if exists', async () => {
 
     const res = await request(app).get(`/api/company/${user._id}`);
-
-    console.log(res.body);
 
     expect(res.statusCode).toBe(200);
 

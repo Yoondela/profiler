@@ -7,6 +7,10 @@ const Company = require('../models/Company');
 const CompanyInvite = require('../models/CompanyInvite');
 const Notification = require('../models/Notification');
 
+jest.mock('../services/sockeClient', () => ({
+  sendNotification: jest.fn().mockResolvedValue({ status: 'sent' }),
+}));
+
 let ownerUser;
 let providerUser;
 let providerPortfolio;
@@ -66,8 +70,6 @@ describe('POST /api/invites/:companyId/invite', () => {
       entityType: 'CompanyInvite',
       entityId: res.body.invite._id,
     }).lean();
-
-    console.log('Notification:', notification);
 
     expect(notification).toBeTruthy();
     expect(notification.title).toBe(`Invite to join ${company.name}`);

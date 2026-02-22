@@ -9,7 +9,7 @@ function generateUsername(auth0Id) {
 }
 
 const createUser = async (req, res) => {
-  console.log('Running POST method');
+  console.log('Creating user..');
 
   try {
     const { name, email, sub: auth0Id } = req.body;
@@ -21,6 +21,7 @@ const createUser = async (req, res) => {
 
     if (!user) {
       user = new User({
+        auth0Id, // TODO: This should be a required field coming from Auth0
         name: defaultName,
         email,
       });
@@ -53,6 +54,29 @@ const createUser = async (req, res) => {
   } catch (err) {
     console.error('Create user error:', err.message);
     res.status(400).json({ message: err.message });
+  }
+};
+
+const getCurrentUser = async (req, res) => {
+  console.log('Getting current user..');
+  try {
+    const auth0Id = req.auth?.sub;
+
+    if (!auth0Id) {
+      return res.status(401).send({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findOne({ auth0Id });
+
+    if (!user) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    res.send(user);
+    console.log('Successful!');
+  } catch (err) {
+    console.error('Get current user error:', err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -120,6 +144,7 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
   createUser,
+  getCurrentUser,
   getAllUsers,
   getUserByEmail,
   getUserById,

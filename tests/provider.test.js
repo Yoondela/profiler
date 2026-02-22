@@ -4,11 +4,11 @@ const app = require('../app');
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 
-jest.mock('../services/geocodeAddress', () => ({
+jest.mock('../helper/geocodeAddress', () => ({
   geocodeAddress: jest.fn(),
 }));
 
-const { geocodeAddress } = require('../services/geocodeAddress');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 
 describe('become provider API', () => {
   let user;

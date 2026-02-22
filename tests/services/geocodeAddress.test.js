@@ -1,4 +1,4 @@
-const { geocodeAddress } = require('../../services/geocodeAddress');
+const { geocodeAddress } = require('../../helper/geocodeAddress');
 
 describe('geocodeAddress', () => {
   it('should return lng and lat for a valid address', async () => {

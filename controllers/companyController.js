@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
-const { geocodeAddress } = require('../services/geocodeAddress');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 
 const createCompany = async (req, res) => {
   console.log('Listing as company');

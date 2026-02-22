@@ -3,9 +3,6 @@ const app = require('../app'); // your express app
 
 jest.setTimeout(10000);
 
-// Mock the whole package, not your local file
-jest.mock('express-oauth2-jwt-bearer');
-
 test('GET /protected should return fake user', async () => {
   const res = await request(app).get('/api/protected');
   expect(res.status).toBe(200);
