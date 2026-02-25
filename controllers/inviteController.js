@@ -1,14 +1,24 @@
 const Company = require('../models/Company');
 const Portfolio = require('../models/Portfolio');
-const CompanyInvite = require('../models/CompanyInvite');
+const CompanyInvite = require('../models/Invite');
 const Notification = require('../models/Notification');
 const { sendNotification } = require('../services/sockeClient');
 
-
-jest.mock('../services/sockeClient', () => ({
-  sendNotification: jest.fn().mockResolvedValue({ status: 'sent' }),
-}));
-
+const reshapeData = (invite) => {
+  return {
+    id: invite._id,
+    user: invite.user,
+    type: invite.type,
+    title: invite.title,
+    message: invite.message,
+    entityType: invite.entityType,
+    entityId: invite.entityId,
+    actions: invite.actions,
+    status: invite.status,
+    resolved: invite.resolved,
+    createdAt: invite.createdAt,
+  };
+};
 
 const inviteMember = async (req, res) => {
   console.log('Inviting Member..');
@@ -63,7 +73,9 @@ const inviteMember = async (req, res) => {
       actions: ['accept', 'reject'],
     });
 
-    await sendNotification(notificationData);
+    console.log('notification data to go to socket:', notificationData);
+
+    await sendNotification(reshapeData(notificationData));
 
     console.log('Succesful!');
 

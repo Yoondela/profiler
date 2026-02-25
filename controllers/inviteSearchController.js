@@ -1,5 +1,5 @@
 const Company = require('../models/Company');
-const CompanyInvite = require('../models/CompanyInvite');
+const CompanyInvite = require('../models/Invite');
 const Portfolio = require('../models/Portfolio');
 
 const memberSearch = async (req, res) => {

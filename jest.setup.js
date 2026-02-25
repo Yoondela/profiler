@@ -8,8 +8,10 @@ jest.mock('express-oauth2-jwt-bearer', () => {
       const token = req.headers.authorization?.split(' ')[1];
 
       req.auth = {
-        sub: token || 'auth0|mock-user-id',
-        scope: 'read:all write:all',
+        payload: {
+          sub: token || 'auth0|mock-user-id',
+          scope: 'read:all write:all',
+        },
       };
 
       next();

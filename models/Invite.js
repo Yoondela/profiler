@@ -1,4 +1,4 @@
-// models/CompanyInvite.js
+// models/Invite.js
 const mongoose = require('mongoose');
 
 const companyInviteSchema = new mongoose.Schema({
@@ -22,11 +22,11 @@ const companyInviteSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    enum: ['pending', 'accepted', 'ignored', 'rejected'],
     default: 'pending',
   },
 }, { timestamps: true });
 
 companyInviteSchema.index({ company: 1, portfolio: 1 }, { unique: true });
 
-module.exports = mongoose.model('CompanyInvite', companyInviteSchema);
+module.exports = mongoose.model('Invite', companyInviteSchema);

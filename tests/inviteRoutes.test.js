@@ -4,7 +4,7 @@ const app = require('../app');
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
-const CompanyInvite = require('../models/CompanyInvite');
+const Invite = require('../models/Invite');
 const Notification = require('../models/Notification');
 
 jest.mock('../services/sockeClient', () => ({
@@ -21,7 +21,7 @@ beforeAll(async () => {
   await User.deleteMany();
   await Portfolio.deleteMany();
   await Company.deleteMany();
-  await CompanyInvite.deleteMany();
+  await Invite.deleteMany();
   await Notification.deleteMany();
 
 
@@ -95,7 +95,7 @@ describe('GET /api/invites/:providerId', () => {
 
 describe('POST /api/invites/:inviteId/respond', () => {
   test('provider can accept invite and become member of the company', async () => {
-    const invite = await CompanyInvite.findOne({ status: 'pending' });
+    const invite = await Invite.findOne({ status: 'pending' });
     expect(invite).toBeTruthy();
 
     const res = await request(app)

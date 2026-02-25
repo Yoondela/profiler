@@ -7,7 +7,7 @@ const {
   inviteMember,
   getProviderInvites,
   respondToInvite,
-} = require('../controllers/companyInviteController');
+} = require('../controllers/inviteController');
 
 router.post('/:companyId/invite', inviteMember);
 router.get('/:providerId', getProviderInvites);

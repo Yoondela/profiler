@@ -7,6 +7,17 @@ const Company = require('../../models/Company');
 const { sendNotification } = require('../../services/sockeClient');
 
 
+jest.mock('../../services/sockeClient', () => ({
+  sendNotification: jest.fn(),
+}));
+
+
+beforeAll(async () => {
+  await User.deleteMany();
+  await Portfolio.deleteMany();
+  await Company.deleteMany();
+});
+
 it('sends realtime notification when inviting user', async () => {
   const owner = await User.create({ name: 'Owner', email: 'owner@test.com' });
   const invited = await User.create({ name: 'Invited', email: 'user@test.com' });

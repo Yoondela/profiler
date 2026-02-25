@@ -4,7 +4,7 @@ const app = require('../app');
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
-const CompanyInvite = require('../models/CompanyInvite');
+const Invite = require('../models/Invite');
 
 let owner;
 let providerA;
@@ -19,7 +19,7 @@ beforeAll(async () => {
   await User.deleteMany();
   await Portfolio.deleteMany();
   await Company.deleteMany();
-  await CompanyInvite.deleteMany();
+  await Invite.deleteMany();
 
   owner = await User.create({
     name: 'Owner Person',
@@ -55,7 +55,7 @@ beforeAll(async () => {
     members: [portfolioA._id],
   });
 
-  await CompanyInvite.create({
+  await Invite.create({
     company: company._id,
     portfolio: portfolioB._id,
     invitedBy: owner._id,

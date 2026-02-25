@@ -59,8 +59,9 @@ const createUser = async (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   console.log('Getting current user..');
+  console.log(req.auth);
   try {
-    const auth0Id = req.auth?.sub;
+    const auth0Id = req.auth?.payload?.sub;
 
     if (!auth0Id) {
       return res.status(401).send({ message: 'Unauthorized' });
