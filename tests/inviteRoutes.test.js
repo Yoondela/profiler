@@ -99,7 +99,7 @@ describe('POST /api/invites/:inviteId/respond', () => {
     expect(invite).toBeTruthy();
 
     const res = await request(app)
-      .post(`/api/invites/${invite._id}/respond`)
+      .patch(`/api/invites/${invite._id}/respond`)
       .send({ action: 'accept' })
       .expect(200);
 

@@ -6,6 +6,18 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { en_CA } = require('@faker-js/faker');
 
+
+jest.mock('express-oauth2-jwt-bearer', () => ({
+  auth: () => (req, res, next) => {
+    req.auth = {
+      payload: {
+        sub: 'auth0|test123',
+      },
+    };
+    next();
+  },
+}));
+
 /**
  * Simple auth helper for tests
  * Replace later with real JWT/Auth0 helper
@@ -16,6 +28,7 @@ const auth = (user) => {
 
 let user;
 let otherUser;
+let notification;
 
 beforeEach(async () => {
   await User.deleteMany();
@@ -43,7 +56,7 @@ afterAll(async () => {
   await mongoose.connection.close();
 });
 
-describe.skip('GET /api/notifications', () => {
+describe('GET /api/notifications', () => {
   test('returns all notifications for user', async () => {
     await Notification.create([
       {
@@ -75,35 +88,36 @@ describe.skip('GET /api/notifications', () => {
     expect(res.body.length).toBe(2);
   });
 
-  test('Mark notification read', async () => {
+  test.skip('Mark notification read', async () => {
+
+    const auth0Id = 'auth0|test123';
 
     user = await User.create({
       name: 'Test User',
       email: 'user@test.com',
+      auth0Id,
       roles: ['provider'],
     });
-    await Notification.create([
+
+    notification = await Notification.create(
       {
         user: user._id,
         type: 'company_invite',
         message: 'Invited you',
         status: 'unread',
       },
-    ]);
+    );
+
+    console.log('Created notification at test__________:', notification);
 
     const res = await request(app)
-      .patch(`/api/notifications/${user._id}/update/read`)
-      .set('Authorization', auth(user))
+      .patch(`/api/notifications/${notification._id}/update/read`)
+      .set('Authorization', auth(auth0Id))
       .expect(200);
 
 
     console.log(res.body);
-
-    // expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(1);
-    expect(res.body[0].status).toBe('read');
-    expect(res.body[0].message).toBe('Invited you');
-    expect(res.body[0].type).toBe('company_invite');
+    expect(res.body.status).toBe('read');
   });
 
   test('returns read notifications for user', async () => {

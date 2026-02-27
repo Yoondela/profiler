@@ -10,6 +10,8 @@ function generateUsername(auth0Id) {
 
 const createUser = async (req, res) => {
   console.log('Creating user..');
+  // Auth0 will create two different users if the same person logs in with different providers (e.g. Google vs email/password)
+  console.log('TODO: enable account linking to prevent duplicates');
 
   try {
     const { name, email, sub: auth0Id } = req.body;
@@ -59,9 +61,10 @@ const createUser = async (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   console.log('Getting current user..');
-  console.log(req.auth);
   try {
     const auth0Id = req.auth?.payload?.sub;
+
+    console.log('Authenticated user ID:', auth0Id);
 
     if (!auth0Id) {
       return res.status(401).send({ message: 'Unauthorized' });

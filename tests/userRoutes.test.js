@@ -42,6 +42,7 @@ describe('User endpoints', () => {
     await user.save();
 
     const res = await request(app).get(`/api/users/id/${user._id}`);
+
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('name', 'GetMe');
     expect(res.body).toHaveProperty('email', user.email);

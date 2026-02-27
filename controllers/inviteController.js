@@ -1,6 +1,6 @@
 const Company = require('../models/Company');
 const Portfolio = require('../models/Portfolio');
-const CompanyInvite = require('../models/Invite');
+const Invite = require('../models/Invite');
 const Notification = require('../models/Notification');
 const { sendNotification } = require('../services/sockeClient');
 
@@ -57,7 +57,7 @@ const inviteMember = async (req, res) => {
     }
 
 
-    const invite = await CompanyInvite.create({
+    const invite = await Invite.create({
       company: company._id,
       portfolio: portfolio._id,
       invitedBy: invitedBy,
@@ -102,7 +102,7 @@ const getProviderInvites = async (req, res) => {
       return res.status(404).json({ message: 'Portfolio not found' });
     }
 
-    const invites = await CompanyInvite.find({
+    const invites = await Invite.find({
       portfolio: portfolio._id,
       status: 'pending',
     })
@@ -126,30 +126,58 @@ const respondToInvite = async (req, res) => {
       return res.status(400).json({ message: 'Invalid action' });
     }
 
-    const invite = await CompanyInvite.findById(inviteId);
+    const invite = await Invite.findById(inviteId)
+      .populate('company')
+      .populate('portfolio');
+
     if (!invite) {
       return res.status(404).json({ message: 'Invite not found' });
     }
 
     if (invite.status !== 'pending') {
-      return res
-        .status(400)
-        .json({ message: 'Invite already handled' });
+      return res.status(400).json({ message: 'Invite already handled' });
+    }
+
+    const session = await Invite.startSession();
+    session.startTransaction();
+
+    try {
+      if (action === 'accept') {
+        await Company.findByIdAndUpdate(
+          invite.company._id,
+          { $addToSet: { members: invite.portfolio._id } },
+          { session },
+        );
+
+        invite.status = 'accepted';
+      } else {
+        invite.status = 'rejected';
+      }
+
+      await invite.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
 
     if (action === 'accept') {
-      await Company.findByIdAndUpdate(invite.company, {
-        $addToSet: { members: invite.portfolio },
+      const actionPast = 'accepted';
+
+      const notificationData = await Notification.create({
+        user: invite.invitedBy,
+        type: 'company_invite_response',
+        title: `Invite ${actionPast}`,
+        message: `${invite.portfolio.name} has ${actionPast} and joined ${invite.company.name}.`,
+        entityType: 'CompanyInvite',
+        entityId: invite._id,
       });
 
-      invite.status = 'accepted';
+      await sendNotification(reshapeData(notificationData));
     }
-
-    if (action === 'reject') {
-      invite.status = 'rejected';
-    }
-
-    await invite.save();
 
     return res.status(200).json({ success: true });
   } catch (err) {
@@ -157,6 +185,7 @@ const respondToInvite = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 module.exports = { inviteMember, getProviderInvites, respondToInvite };
 

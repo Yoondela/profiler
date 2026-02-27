@@ -1,4 +1,5 @@
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 const getNotifications = async (req, res) => {
   console.log('Getting notifications..');
@@ -36,24 +37,32 @@ const getNotifications = async (req, res) => {
 
 const markNotificationRead = async (req, res) => {
   console.log('Marking notification read..');
-  console.log(req.params);
-  console.log(req.auth);
   try {
     const { notificationId } = req.params;
-    const authUserId = req.auth?.payload?.sub;
-    console.log('Notification ID to mark read:', notificationId);
+    const auth0Id = req.auth?.payload?.sub;
+
+    // TODO: get user ID from auth token in middleware
+    // and attach to req object to avoid querying DB for user here
+    const user = await User.findOne({ auth0Id });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
 
     if (!notificationId) {
       return res.status(400).json({ message: 'Notification ID is required' });
     }
 
-    const updated = await Notification.findByIdAndUpdate(
-      {_id: notificationId, user: authUserId, status: 'unread' },
+    const updated = await Notification.findOneAndUpdate(
+      {
+        _id: notificationId,
+        user: user._id,
+        status: 'unread',
+      },
       { $set: { status: 'read' } },
       { new: true },
     ).lean();
-
-    console.log('Updated notification:', updated);
 
     if (!updated) {
       return res.status(404).json({ message: 'Notification not found' });
