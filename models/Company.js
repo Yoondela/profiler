@@ -56,7 +56,7 @@ companySchema.post('save', async function(doc) {
   await SearchDocument.create({
     type: 'company',
     refId: doc._id,
-    label: doc.name
+    label: doc.name,
   });
 
 });

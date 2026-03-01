@@ -12,11 +12,11 @@ const serviceBookingSchema = new mongoose.Schema({
     default: null,
     required: false,
   },
-  
+
   service: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Service',
-    required: true
+    required: true,
   },
 
   description: {

@@ -13,23 +13,23 @@ const serviceSchema = new mongoose.Schema({
   slug: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
-  
+
   category: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category'
-  }
+    ref: 'Category',
+  },
 
 });
 
 
 serviceSchema.post('save', async function(doc) {
-    
+
   await SearchDocument.create({
     type: 'service',
     refId: doc._id,
-    label: doc.name
+    label: doc.name,
   });
 
 });

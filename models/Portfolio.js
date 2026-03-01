@@ -20,8 +20,8 @@ const portfolioSchema = new mongoose.Schema({
   servicesOffered: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Service'
-    }
+      ref: 'Service',
+    },
   ],
 
   otherSkills: { type: [String], default: [] },
@@ -100,9 +100,9 @@ portfolioSchema.pre('save', async function (next) {
     {
       label: this.displayName,
       type: 'provider',
-      refId: this._id
+      refId: this._id,
     },
-    { upsert: true }
+    { upsert: true },
   );
 
   next();

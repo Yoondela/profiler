@@ -24,18 +24,18 @@ describe('GET /api/search/autocomplete', () => {
 
     const company = await Company.create({
       owner: user._id,
-      name: 'CleanCo'
+      name: 'CleanCo',
     });
 
     await Portfolio.create({
       user: user._id,
       displayName: 'John Cleaner',
-      company: company._id
+      company: company._id,
     });
 
     await Service.create({
       name: 'Cleaning',
-      slug: 'cleaning'
+      slug: 'cleaning',
     });
 
   });

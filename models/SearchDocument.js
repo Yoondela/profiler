@@ -5,18 +5,18 @@ const searchDocumentSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ['provider', 'company', 'service'],
-    required: true
+    required: true,
   },
 
   refId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true
+    required: true,
   },
 
   label: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 
 });
 

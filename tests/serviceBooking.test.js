@@ -189,7 +189,7 @@ describe('ServiceBooking API', () => {
     ]);
 
     const res = await request(app).get(
-      `/api/bookings/user/${client._id}/upcoming`
+      `/api/bookings/user/${client._id}/upcoming`,
     );
 
     expect(res.statusCode).toBe(200);

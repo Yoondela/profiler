@@ -22,12 +22,12 @@ describe('Portfolio API', () => {
 
     gardening = await Service.create({
       name: 'Gardening',
-      slug: 'gardening'
+      slug: 'gardening',
     });
 
     tiling = await Service.create({
       name: 'Tiling',
-      slug: 'tiling'
+      slug: 'tiling',
     });
 
     portfolio = await Portfolio.create({
@@ -81,12 +81,12 @@ describe('PATCH /api/portfolios/:providerId', () => {
 
     plumbing = await Service.create({
       name: 'Plumbing',
-      slug: 'plumbing'
+      slug: 'plumbing',
     });
 
     tiling = await Service.create({
       name: 'Tiling',
-      slug: 'tiling'
+      slug: 'tiling',
     });
 
     portfolio = await Portfolio.create({

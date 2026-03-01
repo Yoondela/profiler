@@ -28,11 +28,11 @@ exports.searchProviders = async (req, res) => {
     const regex = new RegExp(q, 'i');
 
     const matchedServices = await Service.find({
-      name: regex
+      name: regex,
     }).select('_id');
-    
+
     const matchedPortfolios = await Portfolio.find({
-      servicesOffered: { $in: matchedServices.map(s => s._id) }
+      servicesOffered: { $in: matchedServices.map(s => s._id) },
     }).select('user');
 
 
@@ -149,28 +149,28 @@ exports.autocomplete = async (req, res) => {
                 text: {
                   query: q,
                   path: 'label',
-                  score: { boost: { value: 10 } }
-                }
+                  score: { boost: { value: 10 } },
+                },
               },
               {
                 autocomplete: {
                   query: q,
                   path: 'label',
                   tokenOrder: 'sequential',
-                  score: { boost: { value: 5 } }
-                }
+                  score: { boost: { value: 5 } },
+                },
               },
               {
                 autocomplete: {
                   query: q,
                   path: 'label',
                   tokenOrder: 'any',
-                  score: { boost: { value: 2 } }
-                }
-              }
-            ]
-          }
-        }
+                  score: { boost: { value: 2 } },
+                },
+              },
+            ],
+          },
+        },
       },
 
       {
@@ -178,13 +178,13 @@ exports.autocomplete = async (req, res) => {
           label: 1,
           type: 1,
           refId: 1,
-          score: { $meta: 'searchScore' }
-        }
+          score: { $meta: 'searchScore' },
+        },
       },
 
       { $sort: { score: -1 } },
 
-      { $limit: 10 }
+      { $limit: 10 },
 
     ]);
 
