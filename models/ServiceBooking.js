@@ -12,26 +12,13 @@ const serviceBookingSchema = new mongoose.Schema({
     default: null,
     required: false,
   },
-  serviceType: {
-    type: String,
-    required: true,
-    enum: [
-      'Baby Sitting',
-      'House Cleaning',
-      'Gardening',
-      'Dog Grooming',
-      'Car Wash',
-      'Hair Dressing',
-      'Swimming Pool Cleaning',
-      'Photographer',
-      'Food Catering',
-      'Plumbing',
-      'Deco',
-      'Cleaning',
-      'Tiling',
-      'Other',
-    ],
+  
+  service: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Service',
+    required: true
   },
+
   description: {
     type: String,
     required: false,

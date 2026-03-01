@@ -5,6 +5,8 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Category = require('../models/Category');
 const Company = require('../models/Company');
+const Service = require('../models/Service');
+const SearchDocument = require('../models/SearchDocument');
 
 
 exports.searchProviders = async (req, res) => {
@@ -25,9 +27,14 @@ exports.searchProviders = async (req, res) => {
 
     const regex = new RegExp(q, 'i');
 
+    const matchedServices = await Service.find({
+      name: regex
+    }).select('_id');
+    
     const matchedPortfolios = await Portfolio.find({
-      servicesOffered: { $in: [regex] } ,
+      servicesOffered: { $in: matchedServices.map(s => s._id) }
     }).select('user');
+
 
     const searchCompanies = await Company.find({
       name: regex,
@@ -104,181 +111,93 @@ exports.searchProviders = async (req, res) => {
   }
 };
 
+
 exports.autocomplete = async (req, res) => {
-  console.log('Autocomplete search..');
-  console.log(req.query);
 
   try {
+
     const q = (req.query.q || '').trim();
 
     if (q.length < 2) {
-      return res.status(200).json([]);
+      return res.json([]);
     }
 
-    const isTestEnv = process.env.NODE_ENV === 'test';
+    if (process.env.NODE_ENV === 'test') {
 
-    // ---------------- Categories ----------------
-    let categories = [];
+      const regex = new RegExp(q, 'i');
 
-    if (isTestEnv) {
-      categories = await Category.find({
-        name: { $regex: `^${q}`, $options: 'i' },
-      })
-        .limit(5)
-        .select({ name: 1, _id: 0 })
-        .lean();
+      console.log('Autocomplete query (test mode):', q);
 
-      categories = categories.map((c) => ({ label: c.name }));
-    } else {
-      categories = await Category.aggregate([
-        {
-          $search: {
-            index: 'category_autocomplete',
-            autocomplete: {
-              query: q,
-              path: 'name',
-            },
-          },
-        },
-        { $limit: 5 },
-        {
-          $project: {
-            label: '$name',
-            _id: 0,
-          },
-        },
-      ]);
+      const results = await SearchDocument
+        .find({ label: regex })
+        .limit(10);
+
+      console.log('Autocomplete results (test mode):', results);
+
+      return res.json(results);
+
     }
 
-    console.log('Categories found:', categories);
+    const results = await SearchDocument.aggregate([
 
-    // ---------------- Companies ----------------
-    let companies = [];
+      {
+        $search: {
+          index: 'search_autocomplete',
+          compound: {
+            should: [
+              {
+                text: {
+                  query: q,
+                  path: 'label',
+                  score: { boost: { value: 10 } }
+                }
+              },
+              {
+                autocomplete: {
+                  query: q,
+                  path: 'label',
+                  tokenOrder: 'sequential',
+                  score: { boost: { value: 5 } }
+                }
+              },
+              {
+                autocomplete: {
+                  query: q,
+                  path: 'label',
+                  tokenOrder: 'any',
+                  score: { boost: { value: 2 } }
+                }
+              }
+            ]
+          }
+        }
+      },
 
-    if (isTestEnv) {
-      companies = await Company.find({
-        name: { $regex: `^${q}`, $options: 'i' },
-      })
-        .limit(5)
-        .select({ company: 1, _id: 0 })
-        .lean();
+      {
+        $project: {
+          label: 1,
+          type: 1,
+          refId: 1,
+          score: { $meta: 'searchScore' }
+        }
+      },
 
-      companies = companies.map((c) => ({ label: c.company }));
-    } else {
-      companies = await Company.aggregate([
-        {
-          $search: {
-            index: 'company_autocomplete',
-            autocomplete: {
-              query: q,
-              path: 'name',
-            },
-          },
-        },
-        { $limit: 5 },
-        {
-          $project: {
-            label: '$name',
-            _id: 0,
-          },
-        },
-      ]);
-    }
+      { $sort: { score: -1 } },
 
-    console.log('Companies found:', companies);
+      { $limit: 10 }
 
-    // ---------------- Users ----------------
-    // let users = [];
+    ]);
 
-    // if (isTestEnv) {
-    //   users = await User.find({
-    //     name: { $regex: `^${q}`, $options: 'i' },
-    //   })
-    //     .limit(5)
-    //     .select({ name: 1, _id: 0 })
-    //     .lean();
+    console.log('Autocomplete results:', results);
 
-    //   users = users.map((u) => ({ label: u.name }));
-    // } else {
-    //   users = await User.aggregate([
-    //     {
-    //       $search: {
-    //         index: 'user_autocomplete',
-    //         autocomplete: {
-    //           query: q,
-    //           path: 'name',
-    //         },
-    //       },
-    //     },
-    //     { $limit: 5 },
-    //     {
-    //       $project: {
-    //         label: '$name',
-    //         _id: 0,
-    //       },
-    //     },
-    //   ]);
-    // }
+    res.json(results);
 
-    // console.log('Users found:', users);
-
-    // ---------------- Services ----------------
-    let services = [];
-
-    if (isTestEnv) {
-      const portfolios = await Portfolio.find({
-        servicesOffered: { $regex: `^${q}`, $options: 'i' },
-      })
-        .limit(5)
-        .select({ servicesOffered: 1, _id: 0 })
-        .lean();
-
-      services = portfolios.flatMap((p) =>
-        p.servicesOffered
-          .filter((s) => s.toLowerCase().startsWith(q.toLowerCase()))
-          .map((s) => ({ label: s })),
-      );
-    } else {
-      services = await Portfolio.aggregate([
-        {
-          $search: {
-            index: 'portfolio_autocomplete',
-            autocomplete: {
-              query: q,
-              path: 'servicesOffered',
-            },
-          },
-        },
-        { $limit: 5 },
-        { $unwind: '$servicesOffered' },
-        {
-          $project: {
-            label: '$servicesOffered',
-            _id: 0,
-          },
-        },
-      ]);
-    }
-
-    console.log('Services found:', services);
-
-    // ---------------- Merge + Deduplicate ----------------
-    const results = [
-      ...categories.map((c) => ({ type: 'category', label: c.label })),
-      ...companies.map((c) => ({ type: 'provider', label: c.label })),
-      // ...users.map((c) => ({ type: 'user', label: c.label })),
-      ...services.map((s) => ({ type: 'service', label: s.label })),
-    ];
-
-    const unique = Array.from(
-      new Map(results.map((i) => [i.label, i])).values(),
-    );
-
-    console.log('Autocomplete successful:', unique);
-
-    return res.status(200).json(unique);
   } catch (err) {
+
     console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
+
   }
+
 };
+

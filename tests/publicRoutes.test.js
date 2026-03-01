@@ -5,11 +5,14 @@ const app = require('../app');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
+const Service = require('../models/Service');
 
 describe('GET /api/providers/:id/public', () => {
   let providerUser;
   let profile;
   let portfolio;
+  let service1;
+  let service2;
 
   beforeAll(async () => {
 
@@ -27,9 +30,19 @@ describe('GET /api/providers/:id/public', () => {
       avatarUrl: 'https://avatar.com/a.jpg',
     });
 
+    service1 = await Service.create({
+      name: 'Cleaning',
+      slug: 'cleaning',
+    });
+
+    service2 = await Service.create({
+      name: 'Gardening',
+      slug: 'gardening',
+    });
+
     portfolio = await Portfolio.create({
       user: providerUser._id,
-      servicesOffered: ['cleaning', 'deep cleaning'],
+      servicesOffered: [service1._id, service2._id],
       otherSkills: ['ironing'],
       logoUrl: 'https://logo.com/logo.png',
       bannerUrl: 'https://banner.com/banner.jpg',
@@ -50,6 +63,7 @@ describe('GET /api/providers/:id/public', () => {
     await Portfolio.deleteMany();
     await Profile.deleteMany();
     await User.deleteMany();
+    await Service.deleteMany();
   });
 
   test('should return provider public profile with portfolio + profile', async () => {

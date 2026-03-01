@@ -16,7 +16,9 @@ exports.getPublicProvider = async (req, res) => {
 
     // Load related profile & portfolio
     const profile = await Profile.findOne({ user: id });
-    const portfolio = await Portfolio.findOne({ user: id });
+    const portfolio = await Portfolio.findOne({ user: id })
+      .populate('company')
+      .populate('servicesOffered');
 
     if (!profile || !portfolio) {
       return res.status(404).json({ message: 'Provider profile incomplete' });

@@ -1,5 +1,6 @@
 // models/Company.js
 const mongoose = require('mongoose');
+const SearchDocument = require('./SearchDocument');
 
 const companySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -49,5 +50,16 @@ const companySchema = new mongoose.Schema({
 
 companySchema.index({ name: 1 });
 companySchema.index({ location: '2dsphere' });
+
+companySchema.post('save', async function(doc) {
+
+  await SearchDocument.create({
+    type: 'company',
+    refId: doc._id,
+    label: doc.name
+  });
+
+});
+
 
 module.exports = mongoose.model('Company', companySchema);

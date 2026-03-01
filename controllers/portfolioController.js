@@ -3,10 +3,11 @@ const Portfolio = require('../models/Portfolio');
 
 const getPortfolio = async (req, res) => {
   console.log('Getting Portfolio');
+
   try {
     const providerId = req.params.providerId;
 
-    const portfolio = await Portfolio.findOne({user: providerId})
+    const portfolio = await Portfolio.findOne({ user: providerId })
       .populate({
         path: 'user',
         populate: {
@@ -14,14 +15,18 @@ const getPortfolio = async (req, res) => {
           model: 'Profile',
         },
       })
-      .populate('company');
+      .populate('company')
+      .populate('servicesOffered');
 
     if (!portfolio) {
       return res.status(404).json({ message: 'Provider not found' });
     }
 
+    console.log(portfolio);
+
     console.log('Successfull!');
     return res.status(200).json(portfolio);
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -30,18 +35,20 @@ const getPortfolio = async (req, res) => {
 
 const updatePortfolio = async (req, res) => {
   console.log('Updating Portfolio');
+
   try {
     const { providerId } = req.params;
     console.log('params', req.params);
-    const updates = req.body;
 
+    const updates = req.body;
     console.log(updates);
 
-    // get user
-    const portfolio = await Portfolio.findOne({user: providerId});
-    if (!portfolio) return res.status(404).json({ message: 'Provider not found' });
+    const portfolio = await Portfolio.findOne({ user: providerId });
 
-    // iterate only keys sent -> update nested providerProfile
+    if (!portfolio) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+
     Object.keys(updates).forEach((key) => {
       portfolio[key] = updates[key];
     });

@@ -6,7 +6,7 @@ const createBooking = async (req, res) => {
     const {
       client,
       provider,
-      serviceType,
+      service,
       description,
       forDate,
       forTime,
@@ -18,7 +18,7 @@ const createBooking = async (req, res) => {
     const booking = new ServiceBooking({
       client,
       provider,
-      serviceType,
+      service,
       description,
       forDate,
       forTime,
@@ -36,40 +36,64 @@ const createBooking = async (req, res) => {
   }
 };
 
+// reusable populate config
+const bookingPopulate = [
+  { path: 'service', select: 'name slug' },
+  { path: 'client', select: 'name email' },
+  { path: 'provider', select: 'name email' },
+];
+
+
+// GET all bookings
 const getAllServiceBookings = async (req, res) => {
+  console.log('Fetching all bookings');
+
   try {
-    const bookings = await ServiceBooking.find();
+    const bookings = await ServiceBooking.find()
+      .populate(bookingPopulate)
+      .sort({ requestedAt: -1 });
+
     res.status(200).json(bookings);
+    console.log('All bookings fetched:', bookings.length);
+
   } catch (error) {
+    console.error('Error fetching bookings:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+
+// GET bookings by user (client OR provider)
 const getBookingsByUserId = async (req, res) => {
+  console.log('Fetching bookings for user:', req.params.userId);
+
   try {
     const { userId } = req.params;
 
     const bookings = await ServiceBooking.find({
-      $or: [
-        { client: userId },
-        { provider: userId },
-      ],
+      $or: [{ client: userId }, { provider: userId }],
     })
-      .populate('client', 'name email')
-      .populate('provider', 'name email');
+      .populate(bookingPopulate)
+      .sort({ forDate: -1 });
 
-    if (!bookings || bookings.length === 0) {
+    if (!bookings.length) {
       return res.status(404).json({ message: 'No bookings found for this user' });
     }
 
     res.status(200).json(bookings);
+    console.log('User bookings fetched:', bookings.length);
+
   } catch (err) {
+    console.error('Error fetching user bookings:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
+
+// GET client bookings
 const getClientBookings = async (req, res) => {
   console.log('Getting client bookings');
+
   try {
     const { clientId } = req.params;
     const { status } = req.query;
@@ -78,31 +102,39 @@ const getClientBookings = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-      .populate({
-        path: 'client',
-        select: 'name email',
-        populate: { path: 'profile' },
-      })
-      .populate({
-        path: 'provider',
-        select: 'name email',
-        populate: [
-          { path: 'portfolio' },
-          { path: 'profile' },
-        ],
-      });
+      .populate([
+        { path: 'service', select: 'name slug' },
+        {
+          path: 'client',
+          select: 'name email',
+          populate: { path: 'profile' },
+        },
+        {
+          path: 'provider',
+          select: 'name email',
+          populate: [
+            { path: 'portfolio' },
+            { path: 'profile' },
+          ],
+        },
+      ])
+      .sort({ forDate: -1 });
+
+    console.log('Client bookings fetched:', bookings.length);
 
     res.status(200).json(bookings);
-    console.log('Successful!');
+
   } catch (error) {
     console.error('Error fetching client bookings by status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-const getProviderBookings = async (req, res) => {
 
-  console.log('Get provider bookings request params:');
+// GET provider bookings
+const getProviderBookings = async (req, res) => {
+  console.log('Get provider bookings request params:', req.params);
+
   try {
     const { providerId } = req.params;
     const { status } = req.query;
@@ -111,67 +143,92 @@ const getProviderBookings = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-      .populate('client', 'name email')
-      .populate('provider', 'name email')
+      .populate(bookingPopulate)
       .sort({ forDate: -1 });
 
+    console.log('Provider bookings fetched:', bookings.length);
+
     res.status(200).json(bookings);
-    console.log('Provider bookings fetched:', bookings);
+
   } catch (error) {
     console.error('Error fetching provider bookings by status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+
+// GET booking by ID
 const getBookingById = async (req, res) => {
+  console.log('Fetching booking:', req.params.id);
+
   try {
-    const booking = await ServiceBooking.findById(req.params.id);
+    const booking = await ServiceBooking.findById(req.params.id)
+      .populate(bookingPopulate);
+
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
+
+    console.log('Booking found');
+
     res.status(200).json(booking);
+
   } catch (error) {
+    console.error('Error fetching booking:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+
+// GET upcoming bookings
 const getUpcomingBookingsByUser = async (req, res) => {
+  console.log('Fetching upcoming bookings for user:', req.params.userId);
+
   try {
     const { userId } = req.params;
 
     const bookings = await ServiceBooking.find({
       $or: [{ client: userId }, { provider: userId }],
-      forDate: { $gte: new Date() }, // date now or later
+      forDate: { $gte: new Date() },
     })
-      .populate('client', 'name email')
-      .populate('provider', 'name email')
-      .sort({ forDate: 1 }); // soonest first
+      .populate(bookingPopulate)
+      .sort({ forDate: 1 });
 
     res.status(200).json(bookings);
+    console.log('Upcoming bookings fetched:', bookings.length);
+
   } catch (err) {
+    console.error('Error fetching upcoming bookings:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
+
+// GET past bookings
 const getPastBookingsByUser = async (req, res) => {
+  console.log('Fetching past bookings for user:', req.params.userId);
+
   try {
     const { userId } = req.params;
 
     const bookings = await ServiceBooking.find({
       $or: [{ client: userId }, { provider: userId }],
-      forDate: { $lt: new Date() }, // before today
+      forDate: { $lt: new Date() },
     })
-      .populate('client', 'name email')
-      .populate('provider', 'name email')
-      .sort({ forDate: -1 }); // most recent first
+      .populate(bookingPopulate)
+      .sort({ forDate: -1 });
 
     res.status(200).json(bookings);
+    console.log('Past bookings fetched:', bookings.length);
+
   } catch (err) {
+    console.error('Error fetching past bookings:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// Update booking status
+
+// UPDATE booking status
 const updateBookingStatus = async (req, res) => {
   console.log('Update booking request params:', req.params);
   console.log('Update booking request body:', req.body);
@@ -180,8 +237,8 @@ const updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status, providerId } = req.body;
 
-    // Build updates object safely
     const updates = { status };
+
     if (status === 'accepted' && providerId) {
       updates.provider = providerId;
     }
@@ -189,39 +246,42 @@ const updateBookingStatus = async (req, res) => {
     const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
-    })
-      .populate('client', 'name email')
-      .populate('provider', 'name email');
+    }).populate(bookingPopulate);
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    console.log('Booking status updated:', booking);
+    console.log('Booking status updated:', booking._id);
+
     res.status(200).json(booking);
+
   } catch (err) {
-    console.error('Error updating booking:', err.message);
+    console.error('Error updating booking:', err);
     res.status(400).json({ message: err.message });
   }
 };
 
-// Update booking (only editable fields)
+
+// UPDATE booking fields
 const updateBooking = async (req, res) => {
+  console.log('Updating booking:', req.params.id);
+
   try {
     const { id } = req.params;
 
-    // Only allow editable fields
     const allowedUpdates = [
       'description',
       'note',
       'forDate',
       'forTime',
       'forAddress',
-      'serviceType',
-      'status', // keep status editable too
+      'service',
+      'status',
     ];
 
     const updates = {};
+
     for (let key of allowedUpdates) {
       if (req.body[key] !== undefined) {
         updates[key] = req.body[key];
@@ -231,33 +291,46 @@ const updateBooking = async (req, res) => {
     const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
-    })
-      .populate('client', 'name email')
-      .populate('provider', 'name email');
+    }).populate(bookingPopulate);
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
+    console.log('Booking updated:', booking._id);
+
     res.status(200).json(booking);
+
   } catch (err) {
+    console.error('Error updating booking:', err);
     res.status(400).json({ message: err.message });
   }
 };
 
+
+// GET pending bookings
 const getPendingBookings = async (req, res) => {
+  console.log('Fetching pending bookings');
+
   try {
-    const bookings = await ServiceBooking.find({ status: 'pending' }).populate('client');
+    const bookings = await ServiceBooking.find({ status: 'pending' })
+      .populate(bookingPopulate);
+
+    console.log('Pending bookings found:', bookings.length);
+
     res.status(200).json(bookings);
+
   } catch (error) {
     console.error('Error fetching pending bookings:', error);
     res.status(500).json({ message: 'Server error fetching pending bookings' });
   }
 };
 
-// controllers/bookingController.js
+
+// GET accepted bookings for client
 const getAcceptedBookingsForClient = async (req, res) => {
-  console.log('hit 22');
+  console.log('Fetching accepted bookings for client');
+
   try {
     const { userId } = req.params;
 
@@ -265,18 +338,23 @@ const getAcceptedBookingsForClient = async (req, res) => {
       client: userId,
       status: 'accepted',
     })
-      .populate('client', 'name')
-      .populate('provider', 'name');
+      .populate(bookingPopulate);
+
+    console.log('Accepted bookings fetched:', bookings.length);
 
     res.status(200).json(bookings);
+
   } catch (error) {
     console.error('Error fetching accepted bookings:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+
+// GET bookings by status
 const getBookingsByStatus = async (req, res) => {
-  console.log('Getting booking by status', req.body);
+  console.log('Getting bookings by status:', req.query.status);
+
   try {
     const { status } = req.query;
 
@@ -284,11 +362,13 @@ const getBookingsByStatus = async (req, res) => {
     if (status) filter.status = status;
 
     const bookings = await ServiceBooking.find(filter)
-      .populate('client', 'name')
-      .populate('provider', 'name')
+      .populate(bookingPopulate)
       .sort({ requestedAt: -1 });
 
+    console.log('Bookings fetched:', bookings.length);
+
     res.status(200).json(bookings);
+
   } catch (error) {
     console.error('Error fetching bookings:', error);
     res.status(500).json({ message: 'Server error' });

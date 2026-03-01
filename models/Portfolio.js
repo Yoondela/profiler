@@ -1,7 +1,12 @@
 // models/Portfolio.js
 const mongoose = require('mongoose');
+const SearchDocument = require('./SearchDocument');
 
 const portfolioSchema = new mongoose.Schema({
+  displayName: {
+    type: String,
+    trim: true,
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -12,7 +17,13 @@ const portfolioSchema = new mongoose.Schema({
     ref: 'Company',
     default: null,
   },
-  servicesOffered: { type: [String], default: [] },
+  servicesOffered: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service'
+    }
+  ],
+
   otherSkills: { type: [String], default: [] },
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
@@ -59,6 +70,46 @@ portfolioSchema.index({ company: 1 });
 portfolioSchema.index({ servicesOffered: 1 });
 
 portfolioSchema.index({ location: '2dsphere' });
+
+portfolioSchema.pre('save', async function (next) {
+  try {
+    if (!this.displayName && this.user) {
+      const User = mongoose.model('User');
+
+      const user = await User.findById(this.user).select('name');
+
+      if (user) {
+        this.displayName = user.name;
+      }
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+portfolioSchema.pre('save', async function (next) {
+
+  if (!this.displayName) return next();
+
+  const SearchDocument = require('./SearchDocument');
+
+  await SearchDocument.updateOne(
+    { refId: this._id, type: 'provider' },
+    {
+      label: this.displayName,
+      type: 'provider',
+      refId: this._id
+    },
+    { upsert: true }
+  );
+
+  next();
+});
+
+
+
 
 
 module.exports = mongoose.model('Portfolio', portfolioSchema);

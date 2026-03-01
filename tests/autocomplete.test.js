@@ -1,61 +1,75 @@
 const request = require('supertest');
 const app = require('../app');
 
-const Category = require('../models/Category');
-const User = require('../models/User');
-const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
+const Company = require('../models/Company');
+const Service = require('../models/Service');
+const User = require('../models/User');
+const SearchDocument = require('../models/SearchDocument');
 
 describe('GET /api/search/autocomplete', () => {
+
   beforeAll(async () => {
-    await Category.create({
-      name: 'Cleaning',
-      slug: 'cleaning',
-    });
+
+    await Portfolio.deleteMany();
+    await Company.deleteMany();
+    await Service.deleteMany();
+    await User.deleteMany();
+    await SearchDocument.deleteMany();
 
     const user = await User.create({
-      name: 'Sam Scholes',
-      email: 'sam@test.com',
-      roles: ['provider'],
+      name: 'John Doe',
+      email: 'john@me.com',
     });
 
-    await Profile.create({
-      user: user._id,
+    const company = await Company.create({
+      owner: user._id,
+      name: 'CleanCo'
     });
 
     await Portfolio.create({
       user: user._id,
-      address: {
-        formatted: 'Cape Town, South Africa',
-      },
-      servicesOffered: ['Photoshoot', 'Editing'],
+      displayName: 'John Cleaner',
+      company: company._id
     });
+
+    await Service.create({
+      name: 'Cleaning',
+      slug: 'cleaning'
+    });
+
   });
 
   afterAll(async () => {
-    await Category.deleteMany();
+
     await Portfolio.deleteMany();
-    await Profile.deleteMany();
-    await User.deleteMany();
+    await Company.deleteMany();
+    await Service.deleteMany();
+
   });
 
-  test('returns autocomplete suggestions for categories, providers, and services', async () => {
+  test('returns service, company and provider suggestions', async () => {
+
     const res = await request(app)
       .get('/api/search/autocomplete?q=cle')
       .expect(200);
 
-    expect(Array.isArray(res.body)).toBe(true);
-
-    const labels = res.body.map((i) => i.label);
+    const labels = res.body.map(r => r.label);
 
     expect(labels).toContain('Cleaning');
+    expect(labels).toContain('CleanCo');
+    expect(labels).toContain('John Cleaner');
+
   });
 
-  test('returns empty array for short or missing query', async () => {
+  test('returns empty array when query < 2 characters', async () => {
+
     const res = await request(app)
       .get('/api/search/autocomplete?q=c')
       .expect(200);
 
     expect(res.body).toEqual([]);
+
   });
+
 });
