@@ -27,8 +27,15 @@ const serviceRequestSchema = mongoose.Schema({
     default: 'pending',
   },
   forAddress: {
-    type: String,
-    required: true,
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: undefined,
+    },
+    coordinates: {
+      type: [Number],
+      default: undefined,
+    },
   },
   note: {
     type: String,

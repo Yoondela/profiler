@@ -1,12 +1,16 @@
 const ServiceBooking = require('../models/ServiceBooking');
+const Service = require('../models/Service');
+const slugify = require('slugify');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 
 const createBooking = async (req, res) => {
   console.log('Creating abooking');
+
   try {
     const {
       client,
       provider,
-      service,
+      service, // now service name
       description,
       forDate,
       forTime,
@@ -14,27 +18,57 @@ const createBooking = async (req, res) => {
       note,
     } = req.body;
 
-    // create and save booking
+    let geocodedAddress;
+    // Geocode once
+    if (forAddress.address?.formatted && !forAddress.location?.coordinates) {
+      const { lng, lat } = await geocodeAddress(forAddress.address.formatted);
+
+      geocodedAddress = {
+        type: 'Point',
+        coordinates: [lng, lat],
+      };
+    }
+
+    console.log('Create booking request body:', req.body);
+
+    const slug = slugify(service, { lower: true });
+
+    console.log('Booking service slug:', slug);
+
+    let serviceDoc = await Service.findOne({ slug });
+
+    if (!serviceDoc) {
+      serviceDoc = await Service.create({
+        name: service,
+        slug,
+      });
+    }
+
     const booking = new ServiceBooking({
       client,
       provider,
-      service,
+      service: serviceDoc._id,
       description,
       forDate,
       forTime,
-      forAddress,
+      forAddress: geocodedAddress || forAddress,
       note,
     });
 
     await booking.save();
 
-    res.status(201).json(booking);
     console.log('Booking created:', booking);
+
+    res.status(201).json(booking);
+
   } catch (err) {
     console.error('Create booking error:', err.message);
     res.status(400).json({ message: err.message });
   }
 };
+
+module.exports = { createBooking };
+
 
 // reusable populate config
 const bookingPopulate = [

@@ -5,6 +5,11 @@ const app = require('../app');
 const User = require('../models/User');
 const Service = require('../models/Service');
 const ServiceBooking = require('../models/ServiceBooking');
+const { geocodeAddress } = require('../helper/geocodeAddress');
+
+jest.mock('../helper/geocodeAddress', () => ({
+  geocodeAddress: jest.fn(),
+}));
 
 jest.setTimeout(20000);
 
@@ -13,6 +18,10 @@ describe('ServiceBooking API', () => {
   let provider;
   let plumbingService;
   let cleaningService;
+  const geoPoint = (lng, lat) => ({
+    type: 'Point',
+    coordinates: [lng, lat],
+  });
 
   beforeAll(async () => {
     await ServiceBooking.deleteMany({});
@@ -58,15 +67,25 @@ describe('ServiceBooking API', () => {
     await mongoose.connection.close();
   });
 
-  test('should create a new booking', async () => {
+  it('should create booking and geocode address (East London)', async () => {
+    geocodeAddress.mockResolvedValue({
+      lng: 27.9116,
+      lat: -33.0153,
+    });
+
     const payload = {
       client: client._id,
       provider: provider._id,
-      service: plumbingService._id,
+      service: 'Plumbing',
       description: 'Fix leaking kitchen sink',
       forDate: new Date(),
       forTime: '10:00 AM',
-      forAddress: '456 Test Lane',
+      forAddress: {
+        address: {
+          formatted: 'East London, South Africa',
+          placeId: 'east-london-place-id',
+        },
+      },
       note: 'Bring tools',
     };
 
@@ -74,13 +93,28 @@ describe('ServiceBooking API', () => {
       .post('/api/bookings')
       .send(payload);
 
-    console.log('Create booking response:', res.body);
-
     expect(res.statusCode).toBe(201);
+
+    expect(geocodeAddress).toHaveBeenCalledWith(
+      'East London, South Africa'
+    );
+
     expect(res.body).toHaveProperty('_id');
-    expect(res.body.service).toBe(plumbingService._id.toString());
     expect(res.body.description).toBe(payload.description);
     expect(res.body.status).toBe('pending');
+
+    expect(res.body.forAddress.type).toBe('Point');
+    expect(res.body.forAddress.coordinates).toEqual([
+      27.9116,
+      -33.0153,
+    ]);
+
+    const savedBooking = await ServiceBooking.findById(res.body._id);
+
+    expect(savedBooking.forAddress.coordinates).toEqual([
+      27.9116,
+      -33.0153,
+    ]);
   });
 
   test('should return all bookings', async () => {
@@ -92,7 +126,7 @@ describe('ServiceBooking API', () => {
         description: 'Fix sink',
         forDate: new Date(),
         forTime: '10:00 AM',
-        forAddress: '123 Main St',
+        forAddress: geoPoint(27.9116, -33.0153),
       },
       {
         client: client._id,
@@ -101,7 +135,7 @@ describe('ServiceBooking API', () => {
         description: 'Clean kitchen',
         forDate: new Date(),
         forTime: '11:00 AM',
-        forAddress: '456 Ave',
+        forAddress: geoPoint(28.0473, -26.2041),
       },
     ]);
 
@@ -120,7 +154,7 @@ describe('ServiceBooking API', () => {
       description: 'Fix sink',
       forDate: new Date(),
       forTime: '10:00 AM',
-      forAddress: '123 Street',
+      forAddress: geoPoint(18.4241, -33.9249),
     });
 
     const res = await request(app).get(`/api/bookings/${booking._id}`);
@@ -147,7 +181,7 @@ describe('ServiceBooking API', () => {
         description: 'Fix sink',
         forDate: new Date(),
         forTime: '10:00 AM',
-        forAddress: '123 Street',
+        forAddress: geoPoint(18.4241, -33.9249),
       },
       {
         client: provider._id,
@@ -156,7 +190,7 @@ describe('ServiceBooking API', () => {
         description: 'Clean room',
         forDate: new Date(),
         forTime: '11:00 AM',
-        forAddress: '456 Ave',
+        forAddress: geoPoint(31.0218, -29.8587),
       },
     ]);
 
@@ -175,7 +209,7 @@ describe('ServiceBooking API', () => {
         description: 'Past booking',
         forDate: new Date(Date.now() - 86400000),
         forTime: '10:00 AM',
-        forAddress: 'Past St',
+        forAddress: geoPoint(18.4241, -33.9249),
       },
       {
         client: client._id,
@@ -184,7 +218,7 @@ describe('ServiceBooking API', () => {
         description: 'Upcoming booking',
         forDate: new Date(Date.now() + 86400000),
         forTime: '10:00 AM',
-        forAddress: 'Future Ave',
+        forAddress: geoPoint(27.9116, -33.0153),
       },
     ]);
 
@@ -205,7 +239,7 @@ describe('ServiceBooking API', () => {
       description: 'Pending booking',
       forDate: new Date(),
       forTime: '10:00 AM',
-      forAddress: '789 Road',
+      forAddress: geoPoint(30.5595, -22.9375),
       status: 'pending',
     });
 
@@ -224,7 +258,7 @@ describe('ServiceBooking API', () => {
         description: 'Accepted job',
         forDate: new Date(),
         forTime: '09:00',
-        forAddress: '123 Main',
+        forAddress: geoPoint(31.0218, -29.8587),
         status: 'accepted',
       },
       {
@@ -234,7 +268,7 @@ describe('ServiceBooking API', () => {
         description: 'Pending job',
         forDate: new Date(),
         forTime: '11:00',
-        forAddress: '456 High',
+        forAddress: geoPoint(28.0473, -26.2041),
         status: 'pending',
       },
     ]);
@@ -256,7 +290,7 @@ describe('ServiceBooking API', () => {
       description: 'Clean room',
       forDate: new Date(),
       forTime: '11:00',
-      forAddress: '456 High St',
+      forAddress: geoPoint(28.0473, -26.2041),
       status: 'pending',
     });
 

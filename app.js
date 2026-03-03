@@ -37,6 +37,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
 app.use('/api/portfolios', require('./routes/portfolioRoutes'));
 app.use('/api', require('./routes/serviceBookingsRoutes'));
+app.use('/api', require('./routes/serviceRequestsRoutes'));
 app.use('/api/providers', require('./routes/publicRoutes'));
 app.use('/api/providers', require('./routes/searchRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
