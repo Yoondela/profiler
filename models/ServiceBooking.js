@@ -22,7 +22,6 @@ const serviceBookingSchema = new mongoose.Schema({
   description: {
     type: String,
     required: false,
-    maxlength: 200,
   },
   status: {
     type: String,

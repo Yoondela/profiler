@@ -96,7 +96,7 @@ describe('ServiceBooking API', () => {
     expect(res.statusCode).toBe(201);
 
     expect(geocodeAddress).toHaveBeenCalledWith(
-      'East London, South Africa'
+      'East London, South Africa',
     );
 
     expect(res.body).toHaveProperty('_id');

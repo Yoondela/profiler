@@ -9,22 +9,28 @@ const serviceRequestSchema = mongoose.Schema({
   provider: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    default: null,
   },
-  serviceType: {
-    type: String,
+  service: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Service',
     required: true,
-    enum: ['Plumbing', 'Cleaning', 'Gardening', 'Tiling', 'Other'],
   },
   description: {
     type: String,
     required: false,
-    minlength: 200,
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected', 'completed'],
-    default: 'pending',
+    enum: [
+      'searching',
+      'accepted',
+      'in_progress',
+      'completed',
+      'cancelled',
+      'expired',
+    ],
+    default: 'searching',
   },
   forAddress: {
     type: {
@@ -49,6 +55,23 @@ const serviceRequestSchema = mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  pingTimeInSeconds: {
+    type: Number,
+    default: 60,
+  },
+
+  notifiedProviders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+
+  acceptedAt: Date,
+  completedAt: Date,
 });
+
+serviceRequestSchema.index({ status: 1 });
+serviceRequestSchema.index({ service: 1 });
+serviceRequestSchema.index({ forAddress: '2dsphere' });
+
 
 module.exports = mongoose.model('ServiceRequest', serviceRequestSchema);

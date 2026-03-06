@@ -61,6 +61,7 @@ const portfolioSchema = new mongoose.Schema({
   },
 
   bio: { type: String, default: '' },
+  online: { type: Boolean, default: false },
   rating: { type: Number, default: 0 },
   completedJobs: { type: Number, default: 0 },
   becameProviderAt: { type: Date, default: null },

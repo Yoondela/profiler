@@ -75,7 +75,7 @@ const inviteMember = async (req, res) => {
 
     console.log('notification data to go to socket:', notificationData);
 
-    await sendNotification(reshapeData(notificationData));
+    await sendNotification(reshapeData(notificationData), 'new_notification');
 
     console.log('Succesful!');
 

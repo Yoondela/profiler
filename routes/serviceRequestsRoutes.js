@@ -14,6 +14,6 @@ router.post('/service-requests', checkJwt, createServiceRequest);
 router.get('/service-requests', checkJwt, getAllServiceRequests);
 router.get('/service-requests/:id', checkJwt, getServiceRequestById);
 router.get('/service-requests/user/:userId', checkJwt, getServiceRequestsByUserId);
-router.patch('/service-requests/status/:id', checkJwt, updateServiceRequestStatus);
+router.patch('/service-requests/status/:requestId', checkJwt, updateServiceRequestStatus);
 
 module.exports = router;

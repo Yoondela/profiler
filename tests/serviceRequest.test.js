@@ -2,11 +2,14 @@ const request = require('supertest');
 const app = require('../app');
 
 const User = require('../models/User');
+const Service = require('../models/Service');
 const ServiceRequest = require('../models/ServiceRequest');
 
 describe('ServiceRequest API', () => {
   let client;
   let provider;
+  let plumbingService;
+  let cleaningService;
   const geoPoint = (lng, lat) => ({
     type: 'Point',
     coordinates: [lng, lat],
@@ -17,6 +20,7 @@ describe('ServiceRequest API', () => {
   beforeEach(async () => {
     await ServiceRequest.deleteMany({});
     await User.deleteMany({});
+    await Service.deleteMany({});
 
     client = await User.create({
       name: 'Client User',
@@ -28,6 +32,16 @@ describe('ServiceRequest API', () => {
       email: `provider-${Date.now()}@test.com`,
       roles: ['provider'],
     });
+
+    plumbingService = await Service.create({
+      name: 'Plumbing',
+      slug: `plumbing-${Date.now()}`,
+    });
+
+    cleaningService = await Service.create({
+      name: 'Cleaning',
+      slug: `cleaning-${Date.now()}`,
+    });
   });
 
   test('should create a service request', async () => {
@@ -37,7 +51,7 @@ describe('ServiceRequest API', () => {
       .send({
         client: client._id,
         provider: provider._id,
-        serviceType: 'Plumbing',
+        service: plumbingService._id,
         forAddress: geoPoint(18.4241, -33.9249),
         note: 'Please come with tools',
       });
@@ -45,7 +59,7 @@ describe('ServiceRequest API', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('_id');
     expect(res.body.status).toBe('pending');
-    expect(res.body.serviceType).toBe('Plumbing');
+    expect(res.body.service._id).toBe(plumbingService._id.toString());
     expect(res.body.forAddress).toEqual(geoPoint(18.4241, -33.9249));
   });
 
@@ -54,13 +68,13 @@ describe('ServiceRequest API', () => {
       {
         client: client._id,
         provider: provider._id,
-        serviceType: 'Plumbing',
+        service: plumbingService._id,
         forAddress: geoPoint(18.4241, -33.9249),
       },
       {
         client: client._id,
         provider: provider._id,
-        serviceType: 'Cleaning',
+        service: cleaningService._id,
         forAddress: geoPoint(28.0473, -26.2041),
       },
     ]);
@@ -78,7 +92,7 @@ describe('ServiceRequest API', () => {
     const serviceRequest = await ServiceRequest.create({
       client: client._id,
       provider: provider._id,
-      serviceType: 'Gardening',
+      service: plumbingService._id,
       forAddress: geoPoint(31.0218, -29.8587),
     });
 
@@ -95,13 +109,13 @@ describe('ServiceRequest API', () => {
       {
         client: client._id,
         provider: provider._id,
-        serviceType: 'Cleaning',
+        service: cleaningService._id,
         forAddress: geoPoint(31.0218, -29.8587),
       },
       {
         client: provider._id,
         provider: client._id,
-        serviceType: 'Plumbing',
+        service: plumbingService._id,
         forAddress: geoPoint(18.4241, -33.9249),
       },
     ]);
@@ -118,7 +132,7 @@ describe('ServiceRequest API', () => {
     const serviceRequest = await ServiceRequest.create({
       client: client._id,
       provider: provider._id,
-      serviceType: 'Tiling',
+      service: plumbingService._id,
       forAddress: geoPoint(28.0473, -26.2041),
       status: 'pending',
     });
