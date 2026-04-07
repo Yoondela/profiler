@@ -1,12 +1,15 @@
 const User = require('../models/User');
 
-async function findTopProviders(serviceRequest, options = {}) {
+async function findTopProviders(currentProviderId, options = {}) {
   const limit = options.limit || 10;
 
-  const providers = await User.find({
-    roles: 'provider',
-    // isOnline: true,
-  })
+  const query = { roles: 'provider' };
+
+  if (currentProviderId) {
+    query._id = { $ne: currentProviderId };
+  }
+
+  const providers = await User.find(query)
     .limit(limit)
     .select('user');
 

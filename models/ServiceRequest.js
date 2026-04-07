@@ -33,6 +33,19 @@ const serviceRequestSchema = mongoose.Schema({
     default: 'searching',
   },
   forAddress: {
+    address: {
+      placeId: { type: String, default: '' },
+      street: { type: String, default: '' },
+      suburb: { type: String, default: '' },
+      city: { type: String, default: '' },
+      province: { type: String, default: '' },
+      postalCode: { type: String, default: '' },
+      country: { type: String, default: 'South Africa' },
+    },
+    formatted: {
+      type: String,
+      required: true,
+    },
     type: {
       type: String,
       enum: ['Point'],

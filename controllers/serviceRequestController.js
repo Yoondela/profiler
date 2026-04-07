@@ -2,18 +2,48 @@ const ServiceRequest = require('../models/ServiceRequest');
 const Service = require('../models/Service');
 const User = require('../models/User');
 const slugify = require('slugify');
+const { geocodeAddress } = require('../helper/geocodeAddress');
 const matchingService = require('../services/matchingService');
 const socket = require('../socket');
 
 const requestPopulate = [
-  { path: 'client', select: 'name email' },
-  { path: 'provider', select: 'name email' },
+  {
+    path: 'client',
+    select: 'name email',
+    populate:{
+      path: 'profile',
+      model: 'Profile',
+    },
+  },
+  {
+    path: 'provider',
+    select: 'name email',
+    populate: {
+      path: 'profile',
+      model: 'Profile',
+    },
+  },
   { path: 'service', select: 'name slug' },
 ];
+
 
 const createServiceRequest = async (req, res) => {
   console.log('Creating service request with data:', req.body);
   console.log('auth', req.auth);
+  const { sub: auth0Id } = req.auth.payload;
+
+  if (!auth0Id) {
+    return res.status(401).json({ message: 'Not authorised' });
+  }
+
+  const currentUser = await User.findOne({ auth0Id });
+
+  if (!currentUser) {
+    return res.status(404).json({ message: 'User not found' });
+  };
+
+  console.log('Current user:', currentUser._id);
+
   try {
     const {
       client,
@@ -24,6 +54,28 @@ const createServiceRequest = async (req, res) => {
       note,
       amount,
     } = req.body;
+
+    console.log('forAddress is_____', forAddress);
+
+
+    if (!forAddress) {
+      console.log('forAddress is_____', forAddress);
+      return res.status(400).json({
+        message: 'A formatted request address is required',
+      });
+    }
+
+    let geocodedAddress;
+    // Geocode once
+    if (forAddress && !forAddress.location?.coordinates) {
+      const { lng, lat } = await geocodeAddress(forAddress);
+
+      geocodedAddress = {
+        formatted: forAddress,
+        type: 'Point',
+        coordinates: [lng, lat],
+      };
+    }
 
     const slug = slugify(service, { lower: true });
 
@@ -41,13 +93,13 @@ const createServiceRequest = async (req, res) => {
       provider,
       service: serviceDoc._id,
       description,
-      forAddress,
+      forAddress: geocodedAddress || forAddress,
       note,
       amount,
     });
     const populated = await ServiceRequest.findById(request._id).populate(requestPopulate);
 
-    const matchingProviders = await matchingService.findTopProviders(populated);
+    const matchingProviders = await matchingService.findTopProviders(currentUser._id, populated);
 
     const providerIds = matchingProviders.map(p => p.providerId);
 
@@ -57,6 +109,9 @@ const createServiceRequest = async (req, res) => {
 
 
     console.log('Matching providers found:', matchingProviders);
+
+    //emit to client
+    socket.emitToUser(currentUser._id, 'service_request_created', populated);
 
     // Emit to top providers
     matchingProviders.forEach(({ providerId }) => {
@@ -157,6 +212,14 @@ const updateServiceRequestStatus = async (req, res) => {
         message: 'You cannot accept your own request',
       });
     }
+
+    socket.emitToUser(request.client._id, 'request_accepted', {
+      request: request,
+    });
+
+    socket.emitToUser(user._id, 'request_awarded', {
+      request: request,
+    });
 
     request.notifiedProviders.forEach((provider) => {
       if (provider._id.toString() !== user._id.toString()) {

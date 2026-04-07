@@ -6,6 +6,7 @@ const Company = require('../models/Company');
 const Service = require('../models/Service');
 const User = require('../models/User');
 const SearchDocument = require('../models/SearchDocument');
+const mongoose = require('mongoose');
 
 describe('GET /api/search/autocomplete', () => {
 
@@ -70,6 +71,41 @@ describe('GET /api/search/autocomplete', () => {
 
     expect(res.body).toEqual([]);
 
+  });
+
+});
+
+describe('Service autocomplete', () => {
+
+  beforeEach(async () => {
+    await SearchDocument.deleteMany({});
+    await Service.deleteMany({});
+
+    const services = await Service.insertMany([
+      { name: 'Cleaning', slug: 'cleaning-test' },
+      { name: 'Car Cleaning', slug: 'car-cleaning-test' },
+      { name: 'Gardening', slug: 'gardening-test' },
+    ]);
+
+    await SearchDocument.insertMany([
+      { type: 'service', refId: services[0]._id, label: 'Cleaning' },
+      { type: 'service', refId: services[1]._id, label: 'Car Cleaning' },
+      { type: 'service', refId: services[2]._id, label: 'Gardening' },
+      { type: 'provider', refId: new mongoose.Types.ObjectId(), label: 'CleanCo Ltd' },
+    ]);
+  });
+
+  it('returns only services matching query', async () => {
+
+    const res = await request(app)
+      .get('/api/search/services?q=clean')
+      .expect(200);
+
+    const labels = res.body.map(s => s.label);
+
+    expect(labels).toContain('Cleaning');
+    expect(labels).toContain('Car Cleaning');
+    expect(labels).not.toContain('CleanCo Ltd');
   });
 
 });

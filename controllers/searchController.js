@@ -8,6 +8,37 @@ const Company = require('../models/Company');
 const Service = require('../models/Service');
 const SearchDocument = require('../models/SearchDocument');
 
+exports.searchServices = async (req, res) => {
+  console.log('Searching for searvices..');
+
+  // IMPORTANT: instead of reg exp use Mongo text index or Atlas Search.
+
+  try {
+
+    const q = (req.query.q || '').trim();
+
+    if (!q) {
+      return res.json([]);
+    }
+
+    const results = await SearchDocument.find({
+      type: 'service',
+      label: { $regex: q, $options: 'i' },
+    })
+      .limit(10)
+      .select('label refId');
+
+    console.log(results);
+
+    res.json(results);
+
+    console.log('Successful!');
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 exports.searchProviders = async (req, res) => {
   try {

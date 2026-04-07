@@ -9,6 +9,8 @@ const createCompany = async (req, res) => {
     const { id } = req.params;
     const { name, address } = req.body;
 
+    console.log('Received data:', { id, name, address });
+
     if (!name || !address || !address.formatted) {
       return res.status(400).json({
         message: 'Company name and address are required',

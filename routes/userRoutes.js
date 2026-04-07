@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const { createUser, getCurrentUser, getAllUsers, getUserById, getUserByEmail, deleteUser } = require('../controllers/userController');
+const { getFlackUserId } = require('../controllers/flackController');
 const { becomeProvider } = require('../controllers/providerConroller');
 
 const checkJwt = require('../middleware/auth');
@@ -12,7 +13,12 @@ router.get('/protected', checkJwt, (req, res) => {
 });
 
 router.post('/', createUser);
-router.get('/', checkJwt, getAllUsers);
+// router.get('/', checkJwt, (req, res, next) => {
+//   if (req.query.userId) {
+//     return getFlackUserId(req, res, next);
+//   }
+//   return getAllUsers(req, res, next);
+// });
 router.get('/me', checkJwt, getCurrentUser);
 router.get('/id/:id', checkJwt, getUserById);
 router.get('/email/:email', checkJwt, getUserByEmail);

@@ -2,6 +2,12 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
+  flackUserId: {
+    type: String,
+    unique: true,
+    index: true,
+    default: () => new mongoose.Types.ObjectId().toString(),
+  },
   auth0Id: { type: String, required: false, sparse: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
