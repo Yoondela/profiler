@@ -5,6 +5,7 @@ const slugify = require('slugify');
 const { geocodeAddress } = require('../helper/geocodeAddress');
 const matchingService = require('../services/matchingService');
 const socket = require('../socket');
+const ensureDM = require('../infra/flack/flackClient').ensureDM;
 
 const requestPopulate = [
   {
@@ -229,6 +230,18 @@ const updateServiceRequestStatus = async (req, res) => {
         });
       }
     });
+
+    //Flack DM setup
+
+    const provider = await User.findById(request.provider);
+    const client = await User.findById(request.client);
+    const userA = provider.flackUserId;
+    const userB = client.flackUserId;
+
+    console.log('Provider Flack User ID:', provider.flackUserId);
+    console.log('Client Flack User ID:', client.flackUserId);
+
+    await ensureDM(userA, userB);
 
     res.status(200).json(request);
     console.log('Successful!');

@@ -5,6 +5,6 @@ const { getFlackUserId, getFlackUserInfoByFlackId } = require('../controllers/fl
 const checkJwt = require('../middleware/auth');
 
 router.get('/me/:id', checkJwt, getFlackUserId);
-router.get('/by-flack/:flackUserId', checkJwt, getFlackUserInfoByFlackId);
+router.get('/by-flack/:flackUserId', getFlackUserInfoByFlackId);
 
 module.exports = router;
