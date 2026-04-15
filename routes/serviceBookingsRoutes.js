@@ -25,7 +25,7 @@ router.get('/bookings/:id', checkJwt, getBookingById);
 router.get('/bookings/user/:userId', checkJwt, getBookingsByUserId);
 router.get('/bookings/user/:userId/upcoming', checkJwt, getUpcomingBookingsByUser);
 router.get('/bookings/user/:userId/past', checkJwt, getPastBookingsByUser);
-router.patch('/bookings/status/:id', checkJwt, updateBookingStatus);
+router.patch('/bookings/status/:bookingId', checkJwt, updateBookingStatus);
 router.patch('/bookings/:id', checkJwt, updateBooking);
 
 module.exports = router;

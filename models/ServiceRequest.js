@@ -33,27 +33,32 @@ const serviceRequestSchema = mongoose.Schema({
     default: 'searching',
   },
   forAddress: {
-    address: {
-      placeId: { type: String, default: '' },
-      street: { type: String, default: '' },
-      suburb: { type: String, default: '' },
-      city: { type: String, default: '' },
-      province: { type: String, default: '' },
-      postalCode: { type: String, default: '' },
-      country: { type: String, default: 'South Africa' },
-    },
     formatted: {
       type: String,
       required: true,
     },
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: undefined,
+
+    placeId: String,
+
+    addressComponents: {
+      street: String,
+      suburb: String,
+      city: String,
+      province: String,
+      postalCode: String,
+      country: String,
     },
-    coordinates: {
-      type: [Number],
-      default: undefined,
+
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        required: true,
+      },
     },
   },
   note: {
@@ -84,7 +89,8 @@ const serviceRequestSchema = mongoose.Schema({
 
 serviceRequestSchema.index({ status: 1 });
 serviceRequestSchema.index({ service: 1 });
-serviceRequestSchema.index({ forAddress: '2dsphere' });
+serviceRequestSchema.index({ 'forAddress.location': '2dsphere' });
+
 
 
 module.exports = mongoose.model('ServiceRequest', serviceRequestSchema);

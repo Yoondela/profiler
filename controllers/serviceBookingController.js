@@ -1,12 +1,45 @@
 const ServiceBooking = require('../models/ServiceBooking');
 const Service = require('../models/Service');
+const User = require('../models/User');
 const slugify = require('slugify');
 const { geocodeAddress } = require('../helper/geocodeAddress');
+const matchingService = require('../services/matchingService');
+const { parseGoogleAddress } = require('../helper/parseGoogleAddress');
+
+const socket = require('../socket');
+const ensureDM = require('../infra/flack/flackClient').ensureDM;
+
+const bookingPopulate = [
+  {
+    path: 'client',
+    select: 'name email',
+    populate:{
+      path: 'profile',
+      model: 'Profile',
+    },
+  },
+  {
+    path: 'provider',
+    select: 'name email',
+    populate: {
+      path: 'profile',
+      model: 'Profile',
+    },
+  },
+  { path: 'service', select: 'name slug' },
+];
 
 const createBooking = async (req, res) => {
   console.log('Creating abooking');
 
   try {
+    const { sub: auth0Id } = req.auth?.payload || {};
+    let currentUser = null;
+
+    if (auth0Id) {
+      currentUser = await User.findOne({ auth0Id });
+    }
+
     const {
       client,
       provider,
@@ -18,16 +51,31 @@ const createBooking = async (req, res) => {
       note,
     } = req.body;
 
-    let geocodedAddress;
-    // Geocode once
-    if (forAddress.address?.formatted && !forAddress.location?.coordinates) {
-      const { lng, lat } = await geocodeAddress(forAddress.address.formatted);
+    console.log('forAddress is_____', forAddress);
 
-      geocodedAddress = {
+
+    if (!forAddress || !forAddress.addressComponents) {
+      return res.status(400).json({ message: 'Valid address required' });
+    }
+
+    // 1. Normalize
+    const parsed = parseGoogleAddress({
+      formatted_address: forAddress.address,
+      place_id: forAddress.placeId,
+      address_components: forAddress.addressComponents,
+    });
+
+    // 2. Geocode ONCE
+    const { lng, lat } = await geocodeAddress(forAddress.address);
+
+    // 3. Build final object (single source of truth)
+    const finalAddress = {
+      ...parsed,
+      location: {
         type: 'Point',
         coordinates: [lng, lat],
-      };
-    }
+      },
+    };
 
     console.log('Create booking request body:', req.body);
 
@@ -51,15 +99,37 @@ const createBooking = async (req, res) => {
       description,
       forDate,
       forTime,
-      forAddress: geocodedAddress || forAddress,
+      forAddress: finalAddress,
       note,
     });
 
     await booking.save();
 
-    console.log('Booking created:', booking);
+    const populated = await ServiceBooking.findById(booking._id)
+      .populate(bookingPopulate);
 
-    res.status(201).json(booking);
+    const fallbackUser = currentUser || (client ? await User.findById(client) : null);
+    const matchingProviders = await matchingService.findTopProviders(
+      fallbackUser?._id,
+      populated || {},
+    );
+    const providerIds = matchingProviders.map((p) => p.providerId);
+
+    await ServiceBooking.findByIdAndUpdate(booking._id, {
+      notifiedProviders: providerIds,
+    });
+
+    if (fallbackUser?._id) {
+      socket.emitToUser(fallbackUser._id, 'service_booking_created', populated);
+    }
+
+    matchingProviders.forEach(({ providerId }) => {
+      socket.emitToUser(providerId, 'new_service_booking', populated);
+    });
+
+    console.log('Booking created:', populated || booking);
+
+    res.status(201).json(populated || booking);
 
   } catch (err) {
     console.error('Create booking error:', err.message);
@@ -68,14 +138,6 @@ const createBooking = async (req, res) => {
 };
 
 module.exports = { createBooking };
-
-
-// reusable populate config
-const bookingPopulate = [
-  { path: 'service', select: 'name slug' },
-  { path: 'client', select: 'name email' },
-  { path: 'provider', select: 'name email' },
-];
 
 
 // GET all bookings
@@ -268,23 +330,83 @@ const updateBookingStatus = async (req, res) => {
   console.log('Update booking request body:', req.body);
 
   try {
-    const { id } = req.params;
+    const { bookingId } = req.params;
     const { status, providerId } = req.body;
+    const { sub: auth0Id } = req.auth.payload;
 
+    if (!auth0Id) {
+      return res.status(401).json({ message: 'Not authorised' });
+    }
+
+    const user = await User.findOne({ auth0Id });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     const updates = { status };
 
     if (status === 'accepted' && providerId) {
       updates.provider = providerId;
     }
 
-    const booking = await ServiceBooking.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    }).populate(bookingPopulate);
+    const booking = await ServiceBooking.findByIdAndUpdate(
+      {
+        _id: bookingId,
+        status: 'searching',
+        provider: null,
+      },
+      {
+        status: 'accepted',
+        provider: user._id,
+        acceptedAt: Date.now(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).populate(bookingPopulate)
+      .populate('notifiedProviders');
+
+
+    console.log('Thus us the new booking:', booking);
 
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(409).json({ message: 'Booking already accepted' });
     }
+
+    if (booking.client.toString() === user._id.toString()) {
+      return res.status(403).json({
+        message: 'You cannot accept your own request',
+      });
+    }
+
+    socket.emitToUser(booking.client._id, 'booking_accepted', {
+      booking,
+    });
+    if (booking.provider?._id) {
+      socket.emitToUser(booking.provider._id, 'booking_awarded', {
+        booking,
+      });
+    }
+    booking.notifiedProviders?.forEach((provider) => {
+      if (provider?._id && booking.provider?._id
+        && provider._id.toString() !== booking.provider._id.toString()) {
+        socket.emitToUser(provider._id, 'booking_taken', {
+          bookingId: booking._id,
+          provider: booking.provider._id,
+        });
+      }
+    });
+    const providerUser = booking.provider?._id
+      ? await User.findById(booking.provider._id)
+      : null;
+    const clientUser = booking.client?._id
+      ? await User.findById(booking.client._id)
+      : null;
+    if (providerUser?.flackUserId && clientUser?.flackUserId) {
+      await ensureDM(providerUser.flackUserId, clientUser.flackUserId);
+    }
+
 
     console.log('Booking status updated:', booking._id);
 
@@ -327,6 +449,8 @@ const updateBooking = async (req, res) => {
       runValidators: true,
     }).populate(bookingPopulate);
 
+    console.log('booking found', booking);
+
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
@@ -342,15 +466,15 @@ const updateBooking = async (req, res) => {
 };
 
 
-// GET pending bookings
+// GET searching bookings
 const getPendingBookings = async (req, res) => {
   console.log('Fetching pending bookings');
 
   try {
-    const bookings = await ServiceBooking.find({ status: 'pending' })
+    const bookings = await ServiceBooking.find({ status: 'searching' })
       .populate(bookingPopulate);
 
-    console.log('Pending bookings found:', bookings.length);
+    console.log('searching pending found:', bookings.length);
 
     res.status(200).json(bookings);
 

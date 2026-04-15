@@ -38,28 +38,34 @@ const portfolioSchema = new mongoose.Schema({
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   address: {
-    formatted: { type: String, default: '' },
-    placeId: { type: String, default: '' },
-    street: { type: String, default: '' },
-    suburb: { type: String, default: '' },
-    city: { type: String, default: '' },
-    province: { type: String, default: '' },
-    postalCode: { type: String, default: '' },
-    country: { type: String, default: 'South Africa' },
-  },
-
-  location: {
-    type: {
+    formatted: {
       type: String,
-      enum: ['Point'],
-      default: undefined,
+      required: true,
     },
-    coordinates: {
-      type: [Number],
-      default: undefined,
+
+    placeId: String,
+
+    addressComponents: {
+      street: String,
+      suburb: String,
+      city: String,
+      province: String,
+      postalCode: String,
+      country: String,
+    },
+
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        required: true,
+      },
     },
   },
-
   bio: { type: String, default: '' },
   online: { type: Boolean, default: false },
   rating: { type: Number, default: 0 },
@@ -70,7 +76,7 @@ const portfolioSchema = new mongoose.Schema({
 portfolioSchema.index({ company: 1 });
 portfolioSchema.index({ servicesOffered: 1 });
 
-portfolioSchema.index({ location: '2dsphere' });
+portfolioSchema.index({ 'address.location': '2dsphere' });
 
 portfolioSchema.pre('save', async function (next) {
   try {
@@ -108,8 +114,6 @@ portfolioSchema.pre('save', async function (next) {
 
   next();
 });
-
-
 
 
 

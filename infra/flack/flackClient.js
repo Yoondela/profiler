@@ -1,7 +1,7 @@
 // infra/flack/flackClient.js
 async function ensureDM(userA, userB) {
 
-    console.log('Ensuring DM between:', userA, userB);
+  console.log('Ensuring DM between:', userA, userB);
   try {
     const res = await fetch('http://localhost:3001/ensure-dm', {
       method: 'POST',

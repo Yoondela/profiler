@@ -6,13 +6,13 @@ const { sendNotification } = require('../services/sockeClient');
 
 const reshapeData = (invite) => {
   return {
-    id: invite._id,
-    user: invite.user,
+    id: invite._id.toString(),
+    user: invite.user.toString(),
     type: invite.type,
     title: invite.title,
     message: invite.message,
     entityType: invite.entityType,
-    entityId: invite.entityId,
+    entityId: invite.entityId.toString(),
     actions: invite.actions,
     status: invite.status,
     resolved: invite.resolved,
@@ -64,12 +64,12 @@ const inviteMember = async (req, res) => {
     });
 
     const notificationData = await Notification.create({
-      user: portfolio.user,
+      user: portfolio.user.toString(),
       type: 'company_invite',
       title: `Invite to join ${company.name}`,
       message: `You have been invited to join ${company.name}.`,
       entityType: 'CompanyInvite',
-      entityId: invite._id,
+      entityId: invite._id.toString(),
       actions: ['accept', 'reject'],
     });
 

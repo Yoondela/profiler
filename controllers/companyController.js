@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
 const { geocodeAddress } = require('../helper/geocodeAddress');
+const { parseGoogleAddress } = require('../helper/parseGoogleAddress');
 
 const createCompany = async (req, res) => {
   console.log('Listing as company');
@@ -11,11 +12,31 @@ const createCompany = async (req, res) => {
 
     console.log('Received data:', { id, name, address });
 
-    if (!name || !address || !address.formatted) {
+    if (!name || !address || !address.formatted || !address.addressComponents) {
       return res.status(400).json({
         message: 'Company name and address are required',
       });
     }
+
+    const parsed = parseGoogleAddress({
+      formatted_address: address.formatted,
+      place_id: address.placeId,
+      address_components: address.addressComponents,
+    });
+
+    const { lng, lat } = await geocodeAddress(address?.formatted);
+
+    const finalAddress = {
+      formatted: parsed.formatted, // ✅ STRING
+      placeId: parsed.placeId,
+      addressComponents: parsed.addressComponents,
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat],
+      },
+    };
+
+    console.log("Final address:", finalAddress);
 
     const user = await User.findById(id);
     if (!user || !user.roles.includes('provider')) {
@@ -35,21 +56,9 @@ const createCompany = async (req, res) => {
         name,
         owner: user._id,
         members: [portfolio._id],
-        address,
+        address: finalAddress,
       });
       createdNow = true;
-    }
-
-    // Geocode once
-    if (company.address?.formatted && !company.location?.coordinates) {
-      const { lng, lat } = await geocodeAddress(company.address.formatted);
-
-      company.location = {
-        type: 'Point',
-        coordinates: [lng, lat],
-      };
-
-      await company.save();
     }
 
     // Link portfolio once

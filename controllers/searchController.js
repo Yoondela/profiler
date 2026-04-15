@@ -145,6 +145,8 @@ exports.searchProviders = async (req, res) => {
 
 exports.autocomplete = async (req, res) => {
 
+  console.log('new autocomplete...');
+
   try {
 
     const q = (req.query.q || '').trim();
@@ -173,32 +175,28 @@ exports.autocomplete = async (req, res) => {
 
       {
         $search: {
-          index: 'search_autocomplete',
+          index: 'autocomplete',
           compound: {
             should: [
-              {
-                text: {
-                  query: q,
-                  path: 'label',
-                  score: { boost: { value: 10 } },
-                },
-              },
               {
                 autocomplete: {
                   query: q,
                   path: 'label',
+                  fuzzy: {
+                    maxEdits: 2,
+                  },
                   tokenOrder: 'sequential',
                   score: { boost: { value: 5 } },
                 },
               },
-              {
-                autocomplete: {
-                  query: q,
-                  path: 'label',
-                  tokenOrder: 'any',
-                  score: { boost: { value: 2 } },
-                },
-              },
+              // {
+              //   autocomplete: {
+              //     query: q,
+              //     path: 'label',
+              //     tokenOrder: 'any',
+              //     score: { boost: { value: 2 } },
+              //   },
+              // },
             ],
           },
         },

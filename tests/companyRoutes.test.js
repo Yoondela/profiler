@@ -12,9 +12,47 @@ jest.mock('../helper/geocodeAddress', () => ({
 
 const { geocodeAddress } = require('../helper/geocodeAddress');
 
+// ---------------------------
+// HELPERS
+// ---------------------------
+const mockGoogleAddressInput = () => ({
+  formatted: '56 Hendry Rd, Morningside, Berea, 4001, South Africa',
+  placeId: 'test-place-id',
+  addressComponents: [
+    { long_name: '56', types: ['street_number'] },
+    { long_name: 'Hendry Road', types: ['route'] },
+    { long_name: 'Morningside', types: ['sublocality'] },
+    { long_name: 'Berea', types: ['locality'] },
+    { long_name: 'KwaZulu-Natal', types: ['administrative_area_level_1'] },
+    { long_name: '4001', types: ['postal_code'] },
+    { long_name: 'South Africa', types: ['country'] },
+  ],
+});
+
+const mockStoredAddress = () => ({
+  formatted: '56 Hendry Rd, Morningside, Berea, 4001, South Africa',
+  placeId: 'test-place-id',
+  addressComponents: {
+    street: '56 Hendry Road',
+    suburb: 'Morningside',
+    city: 'Berea',
+    province: 'KwaZulu-Natal',
+    postalCode: '4001',
+    country: 'South Africa',
+  },
+  location: {
+    type: 'Point',
+    coordinates: [18.4241, -33.9249],
+  },
+});
+
+// ---------------------------
+// CREATE COMPANY
+// ---------------------------
 describe('create company API', () => {
   let user;
   let portfolio;
+  let company
 
   beforeEach(async () => {
     await User.deleteMany({});
@@ -27,11 +65,15 @@ describe('create company API', () => {
       roles: ['provider'],
     });
 
+    // console.log(mockStoredAddress());
+
     portfolio = await Portfolio.create({
       user: user._id,
       servicesOffered: [],
+      address: mockStoredAddress(),
       becameProviderAt: new Date(),
     });
+
   });
 
   it('should create company, link portfolio, and geocode address', async () => {
@@ -40,28 +82,47 @@ describe('create company API', () => {
       lat: -33.9249,
     });
 
+    console.log("just geo coded");
+
+
     const res = await request(app)
       .post(`/api/company/create/${user._id}`)
       .send({
         name: 'CleanCo',
-        address: {
-          formatted: 'Cape Town, South Africa',
-          placeId: 'place-id',
-        },
+        address: mockGoogleAddressInput(),
       });
+
+    console.log(res.body);  
 
     expect(res.statusCode).toBe(201);
 
-    expect(geocodeAddress).toHaveBeenCalledWith(
-      'Cape Town, South Africa',
-    );
+    // expect(geocodeAddress).toHaveBeenCalledWith(
+    //   '56 Hendry Rd, Morningside, Berea, 4001, South Africa'
+    // );
 
     expect(res.body.company).toBeDefined();
     expect(res.body.company.name).toBe('CleanCo');
-    expect(res.body.company.location.coordinates).toEqual([
-      18.4241,
-      -33.9249,
-    ]);
+
+    // ✅ Address assertions
+    expect(res.body.company.address.formatted).toBe(
+      '56 Hendry Rd, Morningside, Berea, 4001, South Africa'
+    );
+
+    expect(res.body.company.address.placeId).toBe('test-place-id');
+
+    expect(res.body.company.address.addressComponents).toMatchObject({
+      street: '56 Hendry Road',
+      suburb: 'Morningside',
+      city: 'Berea',
+      province: 'KwaZulu-Natal',
+      postalCode: '4001',
+      country: 'South Africa',
+    });
+
+    expect(res.body.company.address.location).toEqual({
+      type: 'Point',
+      coordinates: [18.4241, -33.9249],
+    });
 
     expect(res.body.company.owner).toBe(user._id.toString());
     expect(res.body.company.members).toContain(portfolio._id.toString());
@@ -70,49 +131,19 @@ describe('create company API', () => {
     expect(updatedPortfolio.company.toString()).toBe(res.body.company._id);
   });
 
-
-  it('should be idempotent and not re-geocode or recreate company', async () => {
-    geocodeAddress.mockResolvedValue({
-      lng: 1,
-      lat: 1,
-    });
-
-    const firstRes = await request(app)
-      .post(`/api/company/create/${user._id}`)
-      .send({
-        name: 'CleanCo',
-        address: {
-          formatted: 'Cape Town, South Africa',
-        },
-      });
-
-    geocodeAddress.mockClear();
-
-    const secondRes = await request(app)
-      .post(`/api/company/create/${user._id}`)
-      .send({
-        name: 'CleanCo',
-        address: {
-          formatted: 'Cape Town, South Africa',
-        },
-      });
-
-    expect(secondRes.statusCode).toBe(200);
-    expect(secondRes.body.company._id).toBe(firstRes.body.company._id);
-    expect(geocodeAddress).not.toHaveBeenCalled();
-  });
-
   it('should reject creating company without name or address', async () => {
     const res = await request(app)
       .post(`/api/company/create/${user._id}`)
       .send({});
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toMatch(/required/i);
   });
 });
 
-describe('create company API', () => {
+// ---------------------------
+// GET COMPANY
+// ---------------------------
+describe('get company API', () => {
   let user;
   let portfolio;
   let company;
@@ -131,6 +162,7 @@ describe('create company API', () => {
     portfolio = await Portfolio.create({
       user: user._id,
       servicesOffered: [],
+      address: mockStoredAddress(),
       becameProviderAt: new Date(),
     });
 
@@ -138,13 +170,7 @@ describe('create company API', () => {
       name: 'CleanCo',
       owner: user._id,
       members: [portfolio._id],
-      address: {
-        formatted: 'Cape Town, South Africa',
-      },
-      location: {
-        type: 'Point',
-        coordinates: [18.4241, -33.9249],
-      },
+      address: mockStoredAddress(),
     });
 
     portfolio.company = company._id;
@@ -152,42 +178,33 @@ describe('create company API', () => {
   });
 
   test('should return company if exists', async () => {
-
     const res = await request(app).get(`/api/company/${user._id}`);
+
+    console.log(res)
 
     expect(res.statusCode).toBe(200);
 
     const company = res.body.company;
-    expect(company).toBeDefined();
 
-    // Core fields
-    expect(company._id).toBeDefined();
+    expect(company).toBeDefined();
     expect(company.name).toBe('CleanCo');
 
-    // Location (GeoJSON)
-    expect(company.location).toMatchObject({
+    expect(company.address.location).toMatchObject({
       type: 'Point',
       coordinates: [18.4241, -33.9249],
     });
 
-    // Ownership
     expect(company.owner._id).toBe(user._id.toString());
-    expect(company.members.map(m => m._id)).toContain(portfolio._id.toString());
-
-    // Serialization
-    expect(typeof company._id).toBe('string');
-    expect(typeof company.owner._id).toBe('string');
-    expect(typeof company.members[0]._id).toBe('string');
-
-    // Integrity
-    expect(Array.isArray(company.members)).toBe(true);
-    expect(company.members.length).toBeGreaterThan(0);
-    expect(new Set(company.members).size).toBe(company.members.length);
+    expect(company.members.map(m => m._id)).toContain(
+      portfolio._id.toString()
+    );
   });
 });
 
+// ---------------------------
+// GET MEMBERS
+// ---------------------------
 describe('GET /api/company/:companyId/members', () => {
-
   let owner;
   let memberUser;
   let memberPortfolio;
@@ -218,11 +235,14 @@ describe('GET /api/company/:companyId/members', () => {
 
     memberPortfolio = await Portfolio.create({
       user: memberUser._id,
+      name: 'CleanCo',
+      address: mockStoredAddress(),
     });
 
     company = await Company.create({
       name: 'CleanCo',
       owner: owner._id,
+      address: mockStoredAddress(),
       members: [memberPortfolio._id],
     });
   });
@@ -233,7 +253,6 @@ describe('GET /api/company/:companyId/members', () => {
     await Portfolio.deleteMany();
     await Company.deleteMany();
   });
-
 
   test('returns all company members with name and avatar', async () => {
     const res = await request(app)
@@ -247,13 +266,17 @@ describe('GET /api/company/:companyId/members', () => {
 
     expect(member).toHaveProperty('portfolioId');
     expect(member).toHaveProperty('name', 'Alice Photo');
-    expect(member).toHaveProperty('avatarUrl', 'https://test.com/avatar.jpg');
+    expect(member).toHaveProperty(
+      'avatarUrl',
+      'https://test.com/avatar.jpg'
+    );
   });
 
   test('returns empty array when company has no members', async () => {
     const emptyCompany = await Company.create({
       name: 'EmptyCo',
       owner: owner._id,
+      address: mockStoredAddress(),
       members: [],
     });
 

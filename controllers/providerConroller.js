@@ -1,57 +1,72 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const { geocodeAddress } = require('../helper/geocodeAddress');
+const { parseGoogleAddress } = require('../helper/parseGoogleAddress');
 
 const becomeProvider = async (req, res) => {
   console.log('Upgrading user to provider..');
   try {
     const { id } = req.params;
-    const { address } = req.body;
+    const { company, address } = req.body;
+
+    console.log(req.body);
 
     // Validate required fields
-    if (!address || !address.formatted) {
-      return res.status(400).json({ message: 'address is required to become a provider' });
+    if (!address || !address.formatted || !address.addressComponents) {
+      return res.status(400).json({
+        message: 'Company name and address are required',
+      });
     }
+
+    console.log("parsing")
+    
+    const parsed = parseGoogleAddress({
+      formatted_address: address.formatted,
+      place_id: address.placeId,
+      address_components: address.addressComponents,
+    });
+
+    console.log("geocoding")
+
+    const { lng, lat } = await geocodeAddress(address?.formatted);
+
+    const finalAddress = {
+      formatted: parsed.formatted, // ✅ STRING
+      placeId: parsed.placeId,
+      addressComponents: parsed.addressComponents,
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat],
+      },
+    };
+  
+
+    console.log('Final address:', finalAddress);
+
 
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
+    console.log("user found", user)
+    
     // Role upgrade (idempotent)
     if (!user.roles.includes('provider')) {
       user.roles.push('provider');
       await user.save();
     }
 
+
+    
     let portfolio = await Portfolio.findOne({ user: user._id });
 
     // Create portfolio once
     if (!portfolio) {
       portfolio = await Portfolio.create({
         user: user._id,
-        address,
-        servicesOffered: [],
-        bio: '',
-        phone: '',
+        address: finalAddress,
         becameProviderAt: new Date(),
       });
-    }
-
-    // Geocode once if address exists and location not yet set
-    if (portfolio.address?.formatted && !portfolio.location.coordinates) {
-      console.log('Geocoding provider address for the first time...', portfolio.address.formatted);
-      const { lng, lat } = await geocodeAddress(
-        portfolio.address.formatted,
-      );
-
-
-      portfolio.location = {
-        type: 'Point',
-        coordinates: [lng, lat],
-      };
-
-      await portfolio.save();
     }
 
     res.status(200).json({

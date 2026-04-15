@@ -23,11 +23,20 @@ const serviceBookingSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected', 'completed', 'confirmed'],
-    default: 'pending',
+    enum: [
+      'searching',
+      'accepted',
+      'in_progress',
+      'completed',
+      'cancelled',
+      'expired',
+    ],
+    default: 'searching',
   },
+
   bookedAt: {
     type: Date,
     default: Date.now,
@@ -40,25 +49,64 @@ const serviceBookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
   forAddress: {
-    type: {
+    formatted: {
       type: String,
-      enum: ['Point'],
-      default: undefined,
+      required: true,
     },
-    coordinates: {
-      type: [Number],
-      default: undefined,
+
+    placeId: String,
+
+    addressComponents: {
+      street: String,
+      suburb: String,
+      city: String,
+      province: String,
+      postalCode: String,
+      country: String,
+    },
+
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        required: true,
+      },
     },
   },
+
   note: {
     type: String,
     default: 'None given',
   },
+
+  pingTimeInSeconds: {
+    type: Number,
+    default: 60,
+  },
+
+  notifiedProviders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+
+  acceptedAt: Date,
+  completedAt: Date,
+
   amount: {
     type: Number,
     default: 0,
   },
 }, { timestamps: true });
+
+
+serviceBookingSchema.index({ status: 1 });
+serviceBookingSchema.index({ service: 1 });
+serviceBookingSchema.index({ 'forAddress.location': '2dsphere' });
 
 module.exports = mongoose.model('ServiceBooking', serviceBookingSchema);

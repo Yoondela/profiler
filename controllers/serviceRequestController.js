@@ -4,6 +4,8 @@ const User = require('../models/User');
 const slugify = require('slugify');
 const { geocodeAddress } = require('../helper/geocodeAddress');
 const matchingService = require('../services/matchingService');
+const { parseGoogleAddress } = require('../helper/parseGoogleAddress');
+
 const socket = require('../socket');
 const ensureDM = require('../infra/flack/flackClient').ensureDM;
 
@@ -33,6 +35,7 @@ const createServiceRequest = async (req, res) => {
   console.log('auth', req.auth);
   const { sub: auth0Id } = req.auth.payload;
 
+
   if (!auth0Id) {
     return res.status(401).json({ message: 'Not authorised' });
   }
@@ -59,45 +62,68 @@ const createServiceRequest = async (req, res) => {
     console.log('forAddress is_____', forAddress);
 
 
-    if (!forAddress) {
-      console.log('forAddress is_____', forAddress);
-      return res.status(400).json({
-        message: 'A formatted request address is required',
-      });
+    if (!forAddress || !forAddress.addressComponents) {
+      return res.status(400).json({ message: 'Valid address required' });
     }
 
-    let geocodedAddress;
-    // Geocode once
-    if (forAddress && !forAddress.location?.coordinates) {
-      const { lng, lat } = await geocodeAddress(forAddress);
+    // 1. Normalize
+    const parsed = parseGoogleAddress({
+      formatted_address: forAddress.address,
+      place_id: forAddress.placeId,
+      address_components: forAddress.addressComponents,
+    });
 
-      geocodedAddress = {
-        formatted: forAddress,
+    // 2. Geocode ONCE
+    const { lng, lat } = await geocodeAddress(forAddress.address);
+
+    // 3. Build final object (single source of truth)
+    const finalAddress = {
+      ...parsed,
+      location: {
         type: 'Point',
         coordinates: [lng, lat],
-      };
-    }
+      },
+    };
+
+    console.log('The final Addreess: ', finalAddress);
 
     const slug = slugify(service, { lower: true });
 
+    console.log('The slug: ', slug);
+
     let serviceDoc = await Service.findOne({ slug });
 
-    if (!serviceDoc) {
-      serviceDoc = await Service.create({
-        name: service,
-        slug,
-      });
+    console.log('service doc: ', serviceDoc);
+
+    try {
+
+      if (!serviceDoc) {
+        serviceDoc = await Service.create({
+          name: service,
+          slug,
+        });
+
+        console.log(serviceDoc);
+
+      }
+    } catch (e) {
+      console.log('err: ', e);
     }
+
+    console.log('Creating the req');
 
     const request = await ServiceRequest.create({
       client,
       provider,
       service: serviceDoc._id,
       description,
-      forAddress: geocodedAddress || forAddress,
+      forAddress: finalAddress,
       note,
       amount,
     });
+
+    console.log('The request: ', request);
+
     const populated = await ServiceRequest.findById(request._id).populate(requestPopulate);
 
     const matchingProviders = await matchingService.findTopProviders(currentUser._id, populated);
