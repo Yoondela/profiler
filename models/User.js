@@ -44,4 +44,16 @@ userSchema.methods.hasRole = function (role) {
 
 userSchema.index({ name: 1 });
 
+userSchema.post('save', async function(doc) {
+
+  const SearchDocument = require('./SearchDocument');
+
+  await SearchDocument.create({
+    type: 'user',
+    refId: doc._id,
+    label: doc.name,
+  });
+
+});
+
 module.exports = mongoose.model('User', userSchema);

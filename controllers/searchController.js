@@ -41,8 +41,12 @@ exports.searchServices = async (req, res) => {
 };
 
 exports.searchProviders = async (req, res) => {
+  console.log('Searching for providers..');
+
   try {
     const q = (req.query.q || '').trim();
+    const city = (req.query.city || '').toLowerCase();
+
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit) || 12, 20);
 
@@ -58,21 +62,19 @@ exports.searchProviders = async (req, res) => {
 
     const regex = new RegExp(q, 'i');
 
-    const matchedServices = await Service.find({
-      name: regex,
-    }).select('_id');
+    // ---------------------------
+    // MATCHING
+    // ---------------------------
+    const matchedServices = await Service.find({ name: regex }).select('_id');
 
     const matchedPortfolios = await Portfolio.find({
-      servicesOffered: { $in: matchedServices.map(s => s._id) },
+      servicesOffered: { $in: matchedServices.map((s) => s._id) },
     }).select('user');
 
-
-    const searchCompanies = await Company.find({
-      name: regex,
-    }).select('_id');
+    const searchCompanies = await Company.find({ name: regex }).select('_id');
 
     const matchedCompany = await Portfolio.find({
-      company: { $in: searchCompanies.map(c => c._id) },
+      company: { $in: searchCompanies.map((c) => c._id) },
     }).select('user');
 
     const matchedUsers = await User.find({
@@ -88,43 +90,104 @@ exports.searchProviders = async (req, res) => {
 
     const uniqueIds = [...new Set(providerIds)];
 
-    const total = uniqueIds.length;
-    const totalPages = Math.ceil(total / limit);
-    const skip = (page - 1) * limit;
-
-    const paginatedIds = uniqueIds.slice(skip, skip + limit);
-
-    const users = await User.find({ _id: { $in: paginatedIds } }).lean();
-    const profiles = await Profile.find({ user: { $in: paginatedIds } }).lean();
-    const portfolios = await Portfolio.find({ user: { $in: paginatedIds } })
+    // ---------------------------
+    // FETCH PORTFOLIOS (for ranking)
+    // ---------------------------
+    const portfolios = await Portfolio.find({
+      user: { $in: uniqueIds },
+    })
       .populate('company', 'name logoUrl')
       .lean();
 
-    const data = users.map((user) => {
-      const profile = profiles.find(
-        (p) => p.user.toString() === user._id.toString(),
-      );
-      const portfolio = portfolios.find(
-        (p) => p.user.toString() === user._id.toString(),
-      );
+    // ---------------------------
+    // MAP FOR FAST LOOKUPS (O(1))
+    // ---------------------------
+    const portfolioMap = new Map(
+      portfolios.map((p) => [p.user.toString(), p])
+    );
+
+    // ---------------------------
+    // NORMALIZE CITY
+    // ---------------------------
+    const normalizeCity = (str = '') =>
+      str.toLowerCase().replace(/-/g, ' ').trim();
+
+    const queryCity = normalizeCity(city);
+
+    // ---------------------------
+    // RANK BY CITY
+    // ---------------------------
+    const rankedIds = uniqueIds
+      .map((id) => {
+        const portfolio = portfolioMap.get(id);
+
+        const portfolioCity = normalizeCity(
+          portfolio?.address?.addressComponents?.city
+        );
+
+        return {
+          id,
+          score: portfolioCity === queryCity ? 100 : 1,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.id);
+
+    // ---------------------------
+    // PAGINATION
+    // ---------------------------
+    const total = rankedIds.length;
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+
+    const paginatedIds = rankedIds.slice(skip, skip + limit);
+
+    // ---------------------------
+    // FETCH USERS + PROFILES
+    // ---------------------------
+    const usersRaw = await User.find({
+      _id: { $in: paginatedIds },
+    }).lean();
+
+    const profilesRaw = await Profile.find({
+      user: { $in: paginatedIds },
+    }).lean();
+
+    // ---------------------------
+    // MAPS (O(1) lookups)
+    // ---------------------------
+    const userMap = new Map(
+      usersRaw.map((u) => [u._id.toString(), u])
+    );
+
+    const profileMap = new Map(
+      profilesRaw.map((p) => [p.user.toString(), p])
+    );
+
+    // ---------------------------
+    // BUILD RESPONSE (ORDER PRESERVED)
+    // ---------------------------
+    const data = paginatedIds.map((id) => {
+      const user = userMap.get(id);
+      const profile = profileMap.get(id);
+      const portfolio = portfolioMap.get(id);
 
       let location = null;
-      if (
-        portfolio?.location?.coordinates?.length === 2
-      ) {
+
+      if (portfolio?.address?.location?.coordinates?.length === 2) {
         location = {
-          lat: portfolio.location.coordinates[1],
-          lng: portfolio.location.coordinates[0],
+          lat: portfolio.address.location.coordinates[1],
+          lng: portfolio.address.location.coordinates[0],
         };
       }
 
       return {
-        _id: user._id,
-        name: user.name,
+        _id: user?._id,
+        name: user?.name || '',
         company: portfolio?.company?.name || '',
         servicesOffered: portfolio?.servicesOffered || [],
         avatarUrl: profile?.avatarUrl || null,
-        logoUrl: portfolio?.logoUrl || null,
+        logoUrl: portfolio?.company?.logoUrl || null,
         location,
       };
     });
@@ -141,6 +204,7 @@ exports.searchProviders = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 
 exports.autocomplete = async (req, res) => {
@@ -229,4 +293,172 @@ exports.autocomplete = async (req, res) => {
   }
 
 };
+exports.searchAll = async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const city = (req.query.city || '').toLowerCase();
+
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 12, 20);
+
+    if (!q) {
+      return res.status(200).json({
+        data: [],
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      });
+    }
+
+    const regex = new RegExp(q, 'i');
+
+    // ---------------------------
+    // SERVICES
+    // ---------------------------
+    const services = await Service.find({ name: regex }).lean();
+
+    // ---------------------------
+    // PROVIDERS
+    // ---------------------------
+    const matchedServices = await Service.find({ name: regex }).select('_id');
+
+    const portfolios = await Portfolio.find({
+      servicesOffered: { $in: matchedServices.map((s) => s._id) },
+    }).lean();
+
+    const providerUsers = await User.find({
+      roles: 'provider',
+    }).lean();
+
+    const providerIds = portfolios.map((p) => p.user.toString());
+
+    const providers = providerUsers.filter((u) =>
+      providerIds.includes(u._id.toString())
+    );
+
+    // ---------------------------
+    // COMPANIES
+    // ---------------------------
+    const companies = await Company.find({ name: regex }).lean();
+
+    // ---------------------------
+    // PROFILES (for providers)
+    // ---------------------------
+    const profiles = await Profile.find({
+      user: { $in: providers.map((p) => p._id) },
+    }).lean();
+
+    // ---------------------------
+    // RANKING (ONLY providers + companies)
+    // ---------------------------
+    const rankedProviders = providers.map((user) => {
+      const portfolio = portfolios.find(
+        (p) => p.user.toString() === user._id.toString()
+      );
+
+      const providerCity =
+        portfolio?.address?.addressComponents?.city?.toLowerCase() || '';
+
+      return {
+        type: 'provider',
+        score: providerCity === city ? 2 : 1,
+        user,
+        portfolio,
+      };
+    });
+
+    const rankedCompanies = companies.map((company) => {
+      const companyCity =
+        company?.address?.addressComponents?.city?.toLowerCase() || '';
+
+      return {
+        type: 'company',
+        score: companyCity === city ? 2 : 1,
+        company,
+      };
+    });
+
+    // ---------------------------
+    // MERGE + SORT
+    // ---------------------------
+    const combined = [
+      ...services.map((s) => ({
+        type: 'service',
+        score: 0,
+        service: s,
+      })),
+      ...rankedProviders,
+      ...rankedCompanies,
+    ].sort((a, b) => b.score - a.score);
+
+    // ---------------------------
+    // PAGINATION
+    // ---------------------------
+    const total = combined.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+
+    const paginated = combined.slice(start, start + limit);
+
+    // ---------------------------
+    // FORMAT RESPONSE
+    // ---------------------------
+    const data = paginated.map((item) => {
+      if (item.type === 'service') {
+        return {
+          type: 'service',
+          _id: item.service._id,
+          name: item.service.name,
+        };
+      }
+
+      if (item.type === 'company') {
+        return {
+          type: 'company',
+          _id: item.company._id,
+          name: item.company.name,
+          logoUrl: item.company.logoUrl,
+        };
+      }
+
+      if (item.type === 'provider') {
+        const profile = profiles.find(
+          (p) => p.user.toString() === item.user._id.toString()
+        );
+
+        let location = null;
+
+        if (
+          item.portfolio?.address?.location?.coordinates?.length === 2
+        ) {
+          location = {
+            lat: item.portfolio.address.location.coordinates[1],
+            lng: item.portfolio.address.location.coordinates[0],
+          };
+        }
+
+        return {
+          type: 'provider',
+          _id: item.user._id,
+          name: item.user.name,
+          avatarUrl: profile?.avatarUrl || null,
+          location,
+        };
+      }
+    });
+
+    return res.status(200).json({
+      data,
+      page,
+      limit,
+      total,
+      totalPages,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 

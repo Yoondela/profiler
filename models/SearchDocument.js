@@ -4,7 +4,7 @@ const searchDocumentSchema = new mongoose.Schema({
 
   type: {
     type: String,
-    enum: ['provider', 'company', 'service'],
+    enum: ['provider', 'company', 'service', 'user'],
     required: true,
   },
 

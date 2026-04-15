@@ -4,6 +4,7 @@ const {
   searchProviders,
   searchServices,
   autocomplete,
+  searchAll,
 } = require('../controllers/searchController');
 
 router.get('/services', searchServices);
