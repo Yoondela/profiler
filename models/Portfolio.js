@@ -1,6 +1,5 @@
 // models/Portfolio.js
 const mongoose = require('mongoose');
-const SearchDocument = require('./SearchDocument');
 
 const portfolioSchema = new mongoose.Schema({
   displayName: {
@@ -27,6 +26,7 @@ const portfolioSchema = new mongoose.Schema({
   otherSkills: { type: [String], default: [] },
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
+  about: { type: String, default: '' },
   galleryPhotos: {
     type: [
       {
@@ -35,6 +35,7 @@ const portfolioSchema = new mongoose.Schema({
     ],
     default: [],
   },
+  
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   address: {

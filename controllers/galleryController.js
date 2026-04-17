@@ -1,102 +1,133 @@
-const { v4: uuid } = require('uuid');
-const crypto = require('crypto');
+const GalleryPhoto = require('../models/GalleryPhoto');
 const Portfolio = require('../models/Portfolio');
 
+const OWNER_TYPE = 'Portfolio';
+
+// CREATE
 const addGalleryPhotos = async (req, res) => {
-  console.log('Adding to gallery..');
   try {
     const portfolio = await Portfolio.findOne({ user: req.params.providerId });
     if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
     const { urls } = req.body;
-
     if (!Array.isArray(urls)) {
       return res.status(400).json({ error: 'urls must be an array' });
     }
 
-    // Transform URLs -> objects
-    const newImages = urls.map(url => ({
+    // get current max order
+    const last = await GalleryPhoto
+      .findOne({ ownerId: portfolio._id, ownerType: OWNER_TYPE })
+      .sort('-order');
+
+    let startOrder = last ? last.order + 1 : 0;
+
+    const docs = urls.map((url, i) => ({
       url,
-      // id: uuid(),
+      ownerId: portfolio._id,
+      ownerType: OWNER_TYPE,
+      order: startOrder + i,
     }));
 
-    portfolio.galleryPhotos.push(...newImages);
-    await portfolio.save();
+    await GalleryPhoto.insertMany(docs);
 
-    res.json({galleryPhotos: portfolio.galleryPhotos});
-    console.log('Successful!');
+    const gallery = await GalleryPhoto.find({
+      ownerId: portfolio._id,
+      ownerType: OWNER_TYPE,
+    }).sort('order');
+
+    res.json({ galleryPhotos: gallery });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 const getGalleryPhotos = async (req, res) => {
-  console.log('Getting gallery..');
   try {
     const portfolio = await Portfolio.findOne({ user: req.params.providerId });
+    if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
-    if (!portfolio) return res.status(404).json({ error: 'Portfolio not found' });
+    const gallery = await GalleryPhoto.find({
+      ownerId: portfolio._id,
+      ownerType: OWNER_TYPE,
+    }).sort('order');
 
-    res.json({galleryPhotos: portfolio.galleryPhotos});
-    console.log('Successful!');
+    res.json({ galleryPhotos: gallery });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 const deleteGalleryPhoto = async (req, res) => {
-  console.log('Deleting gallery photo..');
   try {
     const portfolio = await Portfolio.findOne({ user: req.params.providerId });
     if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
-    const photoId = req.params.photoId;
+    const result = await GalleryPhoto.deleteOne({
+      _id: req.params.photoId,
+      ownerId: portfolio._id,
+      ownerType: OWNER_TYPE,
+    });
 
-    // Filter out the photo
-    const newGallery = portfolio.galleryPhotos.filter(
-      (photo) => photo._id.toString() !== photoId,
-    );
-
-    if (newGallery.length === portfolio.galleryPhotos.length) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Photo not found' });
     }
 
-    portfolio.galleryPhotos = newGallery;
-    await portfolio.save();
+    const gallery = await GalleryPhoto.find({
+      ownerId: portfolio._id,
+      ownerType: OWNER_TYPE,
+    }).sort('order');
 
-    res.json({galleryPhotos: portfolio.galleryPhotos});
-    console.log('Successful!');
+    res.json({ galleryPhotos: gallery });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
 const reorderGalleryPhoto = async (req, res) => {
-  console.log('Reordering gallery..');
   try {
     const portfolio = await Portfolio.findOne({ user: req.params.providerId });
     if (!portfolio) return res.status(404).json({ error: 'Not found' });
 
     const { from, to } = req.body;
 
+    const gallery = await GalleryPhoto.find({
+      ownerId: portfolio._id,
+      ownerType: 'Portfolio',
+    }).sort('order');
+
     if (
-      from < 0 || from >= portfolio.galleryPhotos.length ||
-      to < 0 || to >= portfolio.galleryPhotos.length
+      from < 0 || from >= gallery.length ||
+      to < 0 || to >= gallery.length
     ) {
       return res.status(400).json({ error: 'Invalid index' });
     }
 
-    const item = portfolio.galleryPhotos.splice(from, 1)[0];
-    portfolio.galleryPhotos.splice(to, 0, item);
+    // reorder in memory
+    const item = gallery.splice(from, 1)[0];
+    gallery.splice(to, 0, item);
 
-    await portfolio.save();
+    // build bulk operations
+    const bulkOps = gallery.map((photo, index) => ({
+      updateOne: {
+        filter: { _id: photo._id },
+        update: { order: index },
+      },
+    }));
 
-    res.json({galleryPhotos: portfolio.galleryPhotos});
-    console.log('Successful!');
+    await GalleryPhoto.bulkWrite(bulkOps);
+
+    const updated = await GalleryPhoto.find({
+      ownerId: portfolio._id,
+      ownerType: 'Portfolio',
+    }).sort('order');
+
+    res.json({ galleryPhotos: updated });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 
 module.exports = { addGalleryPhotos, getGalleryPhotos, deleteGalleryPhoto, reorderGalleryPhoto };

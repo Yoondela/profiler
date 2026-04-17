@@ -5,10 +5,37 @@ const SearchDocument = require('./SearchDocument');
 const companySchema = new mongoose.Schema({
   name: { type: String, required: true },
 
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+
+  servicesOffered: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
+    },
+  ],
+
+  otherSkills: { type: [String], default: [] },
+  
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
   about: { type: String, default: '' },
+  
+  galleryPhotos: {
+    type: [
+      {
+        url: { type: String, required: true },
+      },
+    ],
+    default: [],
+  },
 
+  email: { type: String, default: '' },
+  phone: { type: String, default: '' },
+  
   // Company base address (HQ / operating base)
   address: {
     formatted: {
@@ -38,12 +65,6 @@ const companySchema = new mongoose.Schema({
         required: true,
       },
     },
-  },
-
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
   },
 
   members: [{
