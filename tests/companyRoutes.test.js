@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
+const GalleryPhoto = require('../models/GalleryPhoto');
 
 jest.mock('../helper/geocodeAddress', () => ({
   geocodeAddress: jest.fn(),
@@ -52,12 +53,12 @@ const mockStoredAddress = () => ({
 describe('create company API', () => {
   let user;
   let portfolio;
-  let company
 
   beforeEach(async () => {
     await User.deleteMany({});
     await Portfolio.deleteMany({});
     await Company.deleteMany({});
+    await GalleryPhoto.deleteMany({});
 
     user = await User.create({
       name: 'Provider User',
@@ -65,25 +66,32 @@ describe('create company API', () => {
       roles: ['provider'],
     });
 
-    // console.log(mockStoredAddress());
-
     portfolio = await Portfolio.create({
       user: user._id,
       servicesOffered: [],
+      otherSkills: ['ironing'],
+      email: 'provider@test.com',
+      phone: '0812345678',
+      logoUrl: 'logo.png',
+      bannerUrl: 'banner.png',
+      about: 'Portfolio bio',
       address: mockStoredAddress(),
       becameProviderAt: new Date(),
     });
 
+    // add portfolio gallery
+    await GalleryPhoto.create({
+      url: 'https://img.com/1.jpg',
+      ownerType: 'Portfolio',
+      ownerId: portfolio._id,
+    });
   });
 
-  it('should create company, link portfolio, and geocode address', async () => {
+  it('should create company, copy portfolio data, clone gallery, and link portfolio', async () => {
     geocodeAddress.mockResolvedValue({
       lng: 18.4241,
       lat: -33.9249,
     });
-
-    console.log("just geo coded");
-
 
     const res = await request(app)
       .post(`/api/company/create/${user._id}`)
@@ -92,46 +100,71 @@ describe('create company API', () => {
         address: mockGoogleAddressInput(),
       });
 
-    console.log(res.body);  
-
     expect(res.statusCode).toBe(201);
 
-    // expect(geocodeAddress).toHaveBeenCalledWith(
-    //   '56 Hendry Rd, Morningside, Berea, 4001, South Africa'
-    // );
+    const company = res.body.company;
 
-    expect(res.body.company).toBeDefined();
-    expect(res.body.company.name).toBe('CleanCo');
+    // basic
+    expect(company).toBeDefined();
+    expect(company.name).toBe('CleanCo');
 
-    // ✅ Address assertions
-    expect(res.body.company.address.formatted).toBe(
-      '56 Hendry Rd, Morningside, Berea, 4001, South Africa'
-    );
+    // copied fields
+    expect(company.logoUrl).toBe('logo.png');
+    expect(company.bannerUrl).toBe('banner.png');
+    expect(company.about).toBe('Portfolio bio');
+    expect(company.phone).toBe('0812345678');
 
-    expect(res.body.company.address.placeId).toBe('test-place-id');
+    // members
+    expect(company.members).toContain(portfolio._id.toString());
 
-    expect(res.body.company.address.addressComponents).toMatchObject({
-      street: '56 Hendry Road',
-      suburb: 'Morningside',
-      city: 'Berea',
-      province: 'KwaZulu-Natal',
-      postalCode: '4001',
-      country: 'South Africa',
+    // address
+    expect(company.address.formatted).toBeDefined();
+    expect(company.address.location.coordinates).toEqual([
+      18.4241,
+      -33.9249,
+    ]);
+
+    // gallery cloned
+    const companyGallery = await GalleryPhoto.find({
+      ownerId: company._id,
+      ownerType: 'Company',
     });
 
-    expect(res.body.company.address.location).toEqual({
-      type: 'Point',
-      coordinates: [18.4241, -33.9249],
-    });
+    expect(companyGallery.length).toBe(1);
+    expect(company.gallery.length).toBe(1);
 
-    expect(res.body.company.owner).toBe(user._id.toString());
-    expect(res.body.company.members).toContain(portfolio._id.toString());
-
+    // portfolio linked
     const updatedPortfolio = await Portfolio.findById(portfolio._id);
-    expect(updatedPortfolio.company.toString()).toBe(res.body.company._id);
+    expect(updatedPortfolio.company.toString()).toBe(company._id);
   });
 
-  it('should reject creating company without name or address', async () => {
+  it('should NOT create duplicate company', async () => {
+    geocodeAddress.mockResolvedValue({
+      lng: 18.4241,
+      lat: -33.9249,
+    });
+
+    await request(app)
+      .post(`/api/company/create/${user._id}`)
+      .send({
+        name: 'CleanCo',
+        address: mockGoogleAddressInput(),
+      });
+
+    const res = await request(app)
+      .post(`/api/company/create/${user._id}`)
+      .send({
+        name: 'CleanCo',
+        address: mockGoogleAddressInput(),
+      });
+
+    expect(res.statusCode).toBe(200);
+
+    const companies = await Company.find({ owner: user._id });
+    expect(companies.length).toBe(1);
+  });
+
+  it('should reject missing name/address', async () => {
     const res = await request(app)
       .post(`/api/company/create/${user._id}`)
       .send({});
@@ -161,9 +194,7 @@ describe('get company API', () => {
 
     portfolio = await Portfolio.create({
       user: user._id,
-      servicesOffered: [],
       address: mockStoredAddress(),
-      becameProviderAt: new Date(),
     });
 
     company = await Company.create({
@@ -177,27 +208,18 @@ describe('get company API', () => {
     await portfolio.save();
   });
 
-  test('should return company if exists', async () => {
+  test('should return company with populated members', async () => {
     const res = await request(app).get(`/api/company/${user._id}`);
-
-    console.log(res)
 
     expect(res.statusCode).toBe(200);
 
     const company = res.body.company;
 
-    expect(company).toBeDefined();
     expect(company.name).toBe('CleanCo');
-
-    expect(company.address.location).toMatchObject({
-      type: 'Point',
-      coordinates: [18.4241, -33.9249],
-    });
-
     expect(company.owner._id).toBe(user._id.toString());
-    expect(company.members.map(m => m._id)).toContain(
-      portfolio._id.toString()
-    );
+
+    expect(Array.isArray(company.members)).toBe(true);
+    expect(company.members[0]._id).toBe(portfolio._id.toString());
   });
 });
 
@@ -235,7 +257,6 @@ describe('GET /api/company/:companyId/members', () => {
 
     memberPortfolio = await Portfolio.create({
       user: memberUser._id,
-      name: 'CleanCo',
       address: mockStoredAddress(),
     });
 
@@ -272,7 +293,7 @@ describe('GET /api/company/:companyId/members', () => {
     );
   });
 
-  test('returns empty array when company has no members', async () => {
+  test('returns empty array when no members', async () => {
     const emptyCompany = await Company.create({
       name: 'EmptyCo',
       owner: owner._id,

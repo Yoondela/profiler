@@ -23,16 +23,6 @@ const companySchema = new mongoose.Schema({
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
   about: { type: String, default: '' },
-  
-  galleryPhotos: {
-    type: [
-      {
-        url: { type: String, required: true },
-      },
-    ],
-    default: [],
-  },
-
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   
@@ -66,6 +56,11 @@ const companySchema = new mongoose.Schema({
       },
     },
   },
+
+  gallery: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'GalleryPhoto',
+  }],
 
   members: [{
     type: mongoose.Schema.Types.ObjectId,
