@@ -7,6 +7,8 @@ const Category = require('../models/Category');
 const Company = require('../models/Company');
 const Service = require('../models/Service');
 const SearchDocument = require('../models/SearchDocument');
+const GalleryPhoto = require('../models/GalleryPhoto');
+
 
 exports.searchServices = async (req, res) => {
   console.log('Searching for searvices..');
@@ -39,6 +41,25 @@ exports.searchServices = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+const resolveOwner = async (providerId) => {
+  const company = await Company.findOne({ owner: providerId }).select('_id');
+
+  if (company) {
+    return {
+      ownerId: company._id,
+      ownerType: 'Company',
+    };
+  }
+
+  const portfolio = await Portfolio.findOne({ user: providerId }).select('_id');
+  if (!portfolio) throw new Error('Portfolio not found');
+
+  return {
+    ownerId: portfolio._id,
+    ownerType: 'Portfolio',
+  };
+};
+
 
 exports.searchProviders = async (req, res) => {
   console.log('Searching for providers..');
@@ -153,6 +174,20 @@ exports.searchProviders = async (req, res) => {
       user: { $in: paginatedIds },
     }).lean();
 
+    const owners = await Promise.all(
+      paginatedIds.map(async (id) => {
+        try {
+          const owner = await resolveOwner(id);
+          return { providerId: id, ...owner };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const validOwners = owners.filter(Boolean);
+
+
     // ---------------------------
     // MAPS (O(1) lookups)
     // ---------------------------
@@ -164,13 +199,36 @@ exports.searchProviders = async (req, res) => {
       profilesRaw.map((p) => [p.user.toString(), p])
     );
 
+    const ownerMap = new Map(
+      validOwners.map((o) => [o.providerId.toString(), o])
+    );
+
     // ---------------------------
     // BUILD RESPONSE (ORDER PRESERVED)
     // ---------------------------
+
+    const primaryImages = await GalleryPhoto.find({
+      isPrimary: true,
+      $or: validOwners.map((o) => ({
+        ownerId: o.ownerId,
+        ownerType: o.ownerType,
+      })),
+    })
+      .select('url ownerId ownerType')
+      .lean();
+
+    const primaryMap = new Map();
+
+    primaryImages.forEach((img) => {
+      primaryMap.set(`${img.ownerId}-${img.ownerType}`, img.url);
+    });
+
+
     const data = paginatedIds.map((id) => {
       const user = userMap.get(id);
       const profile = profileMap.get(id);
       const portfolio = portfolioMap.get(id);
+      const owner = ownerMap.get(id.toString());
 
       let location = null;
 
@@ -181,6 +239,13 @@ exports.searchProviders = async (req, res) => {
         };
       }
 
+      let primaryImage = null;
+
+      if (owner) {
+        primaryImage =
+          primaryMap.get(`${owner.ownerId}-${owner.ownerType}`) || null;
+      }
+
       return {
         _id: user?._id,
         name: user?.name || '',
@@ -188,6 +253,7 @@ exports.searchProviders = async (req, res) => {
         servicesOffered: portfolio?.servicesOffered || [],
         avatarUrl: profile?.avatarUrl || null,
         logoUrl: portfolio?.company?.logoUrl || null,
+        primaryImage,
         location,
       };
     });

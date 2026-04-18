@@ -46,6 +46,8 @@ app.use('/api/company', require('./routes/companyRoutes'));
 app.use('/api/invites', require('./routes/invitesRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/flack-users', require('./routes/flackRoutes'));
+app.use('/api/gallery', require('./routes/portfolioRoutes'));
+
 
 app.get('/api/health', (_, res) => res.send('Profiler backend is live'));
 

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
+const Company = require('../models/Company');
 
 const getPortfolio = async (req, res) => {
   console.log('Getting Portfolio');
@@ -34,36 +35,53 @@ const getPortfolio = async (req, res) => {
 };
 
 const updatePortfolio = async (req, res) => {
-  console.log('Updating Portfolio');
+  console.log('Updating Provider');
 
   try {
     const { providerId } = req.params;
-    console.log('params', req.params);
-
     const updates = req.body;
-    console.log(updates);
 
     const portfolio = await Portfolio.findOne({ user: providerId });
-
     if (!portfolio) {
       return res.status(404).json({ message: 'Provider not found' });
     }
 
-    Object.keys(updates).forEach((key) => {
-      portfolio[key] = updates[key];
+    const company = await Company.findOne({ owner: providerId });
+
+    // 🔑 company takes precedence
+    const target = company || portfolio;
+
+    const allowedFields = [
+      'displayName',
+      'name',
+      'servicesOffered',
+      'otherSkills',
+      'logoUrl',
+      'bannerUrl',
+      'about',
+      'bio',
+      'phone',
+      'email',
+    ];
+
+    allowedFields.forEach((field) => {
+      if (updates[field] !== undefined) {
+        target[field] = updates[field];
+      }
     });
 
-    await portfolio.save();
+    await target.save();
 
-    console.log(portfolio);
-    console.log('Successful!');
-
-    return res.status(200).json(portfolio);
+    return res.status(200).json({
+      type: company ? 'company' : 'portfolio',
+      data: target,
+    });
 
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 module.exports = { getPortfolio, updatePortfolio };

@@ -11,6 +11,7 @@ const {
   deleteGalleryPhoto,
   reorderGalleryPhoto,
   getGalleryPhotos,
+  setPrimaryGalleryPhoto,
 } = require('../controllers/galleryController');
 
 // router.get('/:providerId', portfolioNotfound);
@@ -20,6 +21,7 @@ router.post('/:providerId/gallery', addGalleryPhotos);
 router.delete('/:providerId/gallery/:photoId', deleteGalleryPhoto);
 router.patch('/:providerId/gallery/reorder', reorderGalleryPhoto);
 router.get('/:providerId/gallery', getGalleryPhotos);
+router.patch('/:providerId/:photoId/primary', setPrimaryGalleryPhoto);
 
 module.exports = router;
 
