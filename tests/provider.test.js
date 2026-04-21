@@ -74,7 +74,7 @@ describe('Become Provider API', () => {
 
       const res = await upgradeToProvider(user._id);
 
-      console.log(res.body)
+      console.log(res.body);
       expect(res.statusCode).toBe(200);
 
       expect(geocodeAddress).toHaveBeenCalledTimes(1);
@@ -118,7 +118,7 @@ describe('Become Provider API', () => {
     it('rejects request without address', async () => {
       const res = await upgradeWithNoAddress(user._id, undefined);
 
-      console.log(res.body)
+      console.log(res.body);
       expect(res.statusCode).toBe(400);
     });
 

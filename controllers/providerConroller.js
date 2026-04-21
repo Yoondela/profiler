@@ -18,15 +18,15 @@ const becomeProvider = async (req, res) => {
       });
     }
 
-    console.log("parsing")
-    
+    console.log('parsing');
+
     const parsed = parseGoogleAddress({
       formatted_address: address.formatted,
       place_id: address.placeId,
       address_components: address.addressComponents,
     });
 
-    console.log("geocoding")
+    console.log('geocoding');
 
     const { lng, lat } = await geocodeAddress(address?.formatted);
 
@@ -39,7 +39,7 @@ const becomeProvider = async (req, res) => {
         coordinates: [lng, lat],
       },
     };
-  
+
 
     console.log('Final address:', finalAddress);
 
@@ -48,8 +48,8 @@ const becomeProvider = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    console.log("user found", user)
-    
+    console.log('user found', user);
+
     // Role upgrade (idempotent)
     if (!user.roles.includes('provider')) {
       user.roles.push('provider');
@@ -57,7 +57,7 @@ const becomeProvider = async (req, res) => {
     }
 
 
-    
+
     let portfolio = await Portfolio.findOne({ user: user._id });
 
     // Create portfolio once

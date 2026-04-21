@@ -75,7 +75,7 @@ describe('GET /api/providers/:id/public', () => {
     });
 
     company = await Company.create({
-      name: "No Phishing",
+      name: 'No Phishing',
       owner: providerUser._id,
       servicesOffered: [service1._id, service2._id],
       otherSkills: ['ironing'],
@@ -102,8 +102,8 @@ describe('GET /api/providers/:id/public', () => {
       .get(`/api/providers/${providerUser._id}/public`)
       .expect(200);
 
-  console.log(res.body);
-    
+    console.log(res.body);
+
     // structure
     expect(res.body).toHaveProperty('user');
     expect(res.body).toHaveProperty('profile');

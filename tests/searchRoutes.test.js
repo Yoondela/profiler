@@ -13,7 +13,8 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
   let otherUser;
   let service1;
   let service2;
-  let company;
+  let company1;
+  let company2;
 
   beforeAll(async () => {
     // ---------------------------
@@ -55,7 +56,7 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
     // ---------------------------
     // COMPANY
     // ---------------------------
-    company = await Company.create({
+    company1 = await Company.create({
       name: 'PhotoCorp',
       owner: providerUser._id,
       address: {
@@ -70,12 +71,28 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
       },
     });
 
+    company2 = await Company.create({
+      owner: otherUser._id,
+      name: 'LSET',
+      servicesOffered: [service1._id],
+      address: {
+        formatted:'Durban, KZN',
+        addressComponents: {
+          city: 'Durban',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [31.0218, -29.8587],
+        },
+      },
+    });
+
     // ---------------------------
     // PORTFOLIOS
     // ---------------------------
     await Portfolio.create({
       user: providerUser._id,
-      company: company._id,
+      company: company1._id,
       servicesOffered: [service1._id, service2._id],
       address: {
         formatted:'Cape Town, Western Cape',
@@ -92,6 +109,7 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
     // lower-ranked (different city)
     await Portfolio.create({
       user: otherUser._id,
+      company: company2._id,
       servicesOffered: [service1._id],
       address: {
         formatted:'Durban, KZN',
@@ -124,7 +142,7 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
       .query({ q: 'photo', city: 'cape town', page: 1, limit: 10 })
       .expect(200);
 
-    console.log(res.body)
+    console.log(res.body);
     expect(res.body).toHaveProperty('data');
     expect(res.body).toHaveProperty('total');
     expect(res.body).toHaveProperty('page');
@@ -139,15 +157,15 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
     // ---------------------------
     // CITY RANKING ASSERTION
     // ---------------------------
-    expect(first.name).toBe('Sam Scholes'); // Cape Town first
-    expect(second.name).toBe('John Durban'); // Durban second
+    expect(first.name).toBe('PhotoCorp'); // Cape Town first
+    expect(second.name).toBe('LSET'); // Durban second
 
     // ---------------------------
     // SHAPE ASSERTIONS
     // ---------------------------
     expect(first).toHaveProperty('_id');
     expect(first).toHaveProperty('name');
-    expect(first).toHaveProperty('company');
+    expect(first).toHaveProperty('bannerUrl');
     expect(first).toHaveProperty('servicesOffered');
     expect(first).toHaveProperty('avatarUrl');
     expect(first).toHaveProperty('location');
@@ -155,7 +173,7 @@ describe('GET /api/providers/search (paginated + city ranking)', () => {
     // ---------------------------
     // COMPANY LINKING
     // ---------------------------
-    expect(first.company).toBe('PhotoCorp');
+    expect(first.name).toBe('PhotoCorp');
 
     // ---------------------------
     // PROFILE DATA

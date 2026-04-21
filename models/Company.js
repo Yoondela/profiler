@@ -19,13 +19,13 @@ const companySchema = new mongoose.Schema({
   ],
 
   otherSkills: { type: [String], default: [] },
-  
+
   logoUrl: { type: String, default: null },
   bannerUrl: { type: String, default: null },
   about: { type: String, default: '' },
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
-  
+
   // Company base address (HQ / operating base)
   address: {
     formatted: {

@@ -120,11 +120,22 @@ exports.searchProviders = async (req, res) => {
       .populate('company', 'name logoUrl')
       .lean();
 
+
+    const companies = await Company.find({
+      owner: { $in: uniqueIds },
+    })
+      .populate('servicesOffered')
+      .lean();
+
     // ---------------------------
     // MAP FOR FAST LOOKUPS (O(1))
     // ---------------------------
     const portfolioMap = new Map(
-      portfolios.map((p) => [p.user.toString(), p])
+      portfolios.map((p) => [p.user.toString(), p]),
+    );
+
+    const companyMap = new Map(
+      companies.map((c) => [c.owner.toString(), c]),
     );
 
     // ---------------------------
@@ -143,7 +154,7 @@ exports.searchProviders = async (req, res) => {
         const portfolio = portfolioMap.get(id);
 
         const portfolioCity = normalizeCity(
-          portfolio?.address?.addressComponents?.city
+          portfolio?.address?.addressComponents?.city,
         );
 
         return {
@@ -182,7 +193,7 @@ exports.searchProviders = async (req, res) => {
         } catch {
           return null;
         }
-      })
+      }),
     );
 
     const validOwners = owners.filter(Boolean);
@@ -192,15 +203,15 @@ exports.searchProviders = async (req, res) => {
     // MAPS (O(1) lookups)
     // ---------------------------
     const userMap = new Map(
-      usersRaw.map((u) => [u._id.toString(), u])
+      usersRaw.map((u) => [u._id.toString(), u]),
     );
 
     const profileMap = new Map(
-      profilesRaw.map((p) => [p.user.toString(), p])
+      profilesRaw.map((p) => [p.user.toString(), p]),
     );
 
     const ownerMap = new Map(
-      validOwners.map((o) => [o.providerId.toString(), o])
+      validOwners.map((o) => [o.providerId.toString(), o]),
     );
 
     // ---------------------------
@@ -228,16 +239,20 @@ exports.searchProviders = async (req, res) => {
       const user = userMap.get(id);
       const profile = profileMap.get(id);
       const portfolio = portfolioMap.get(id);
-      const owner = ownerMap.get(id.toString());
+      const company = companyMap.get(id.toString());
+
+      const source = company || portfolio;
 
       let location = null;
 
-      if (portfolio?.address?.location?.coordinates?.length === 2) {
+      if (source?.address?.location?.coordinates?.length === 2) {
         location = {
-          lat: portfolio.address.location.coordinates[1],
-          lng: portfolio.address.location.coordinates[0],
+          lat: source.address.location.coordinates[1],
+          lng: source.address.location.coordinates[0],
         };
       }
+
+      const owner = ownerMap.get(id.toString());
 
       let primaryImage = null;
 
@@ -248,12 +263,26 @@ exports.searchProviders = async (req, res) => {
 
       return {
         _id: user?._id,
-        name: user?.name || '',
-        company: portfolio?.company?.name || '',
-        servicesOffered: portfolio?.servicesOffered || [],
+
+        // 👇 unified identity
+        name: company?.name || user?.name || '',
+        type: company ? 'company' : 'individual',
+
+        // 👇 unified business data
+        servicesOffered: source?.servicesOffered || [],
+        otherSkills: source?.otherSkills || [],
+
+        // 👇 branding
+        logoUrl: source?.logoUrl || null,
+        bannerUrl: source?.bannerUrl || null,
+
+        // 👇 profile fallback still valid
         avatarUrl: profile?.avatarUrl || null,
-        logoUrl: portfolio?.company?.logoUrl || null,
+
+        // 👇 gallery
         primaryImage,
+
+        // 👇 location
         location,
       };
     });
@@ -400,7 +429,7 @@ exports.searchAll = async (req, res) => {
     const providerIds = portfolios.map((p) => p.user.toString());
 
     const providers = providerUsers.filter((u) =>
-      providerIds.includes(u._id.toString())
+      providerIds.includes(u._id.toString()),
     );
 
     // ---------------------------
@@ -420,7 +449,7 @@ exports.searchAll = async (req, res) => {
     // ---------------------------
     const rankedProviders = providers.map((user) => {
       const portfolio = portfolios.find(
-        (p) => p.user.toString() === user._id.toString()
+        (p) => p.user.toString() === user._id.toString(),
       );
 
       const providerCity =
@@ -490,7 +519,7 @@ exports.searchAll = async (req, res) => {
 
       if (item.type === 'provider') {
         const profile = profiles.find(
-          (p) => p.user.toString() === item.user._id.toString()
+          (p) => p.user.toString() === item.user._id.toString(),
         );
 
         let location = null;

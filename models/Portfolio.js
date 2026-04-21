@@ -35,7 +35,7 @@ const portfolioSchema = new mongoose.Schema({
     ],
     default: [],
   },
-  
+
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   address: {

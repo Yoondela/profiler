@@ -58,8 +58,8 @@ describe.skip('Portfolio Gallery API', () => {
       .post(`/api/portfolios/${user._id}/gallery`)
       .send({ urls: ['4.jpg', '5.jpg'] });
 
-    console.log(res.body)
-    
+    console.log(res.body);
+
     expect(res.status).toBe(200);
 
     // Check shape
@@ -82,14 +82,14 @@ describe.skip('Portfolio Gallery API', () => {
 
   test('DELETE /api/portfolios/:id/gallery/:photoId should delete item', async () => {
     const photoIdToDelete = galleryPhoto[1]._id; // remove the 2nd image
-    console.log("At position 1:", photoIdToDelete )
+    console.log('At position 1:', photoIdToDelete );
 
 
     const res = await request(app)
       .delete(`/api/portfolios/${user._id}/gallery/${photoIdToDelete}`);
 
-    console.log(res.body)
-    
+    console.log(res.body);
+
 
     expect(res.status).toBe(200);
     expect(res.body.galleryPhotos.length).toBe(4); // One removed
@@ -101,8 +101,8 @@ describe.skip('Portfolio Gallery API', () => {
     const res = await request(app)
       .get(`/api/portfolios/${user._id}/gallery`);
 
-    console.log(res.body)
-    
+    console.log(res.body);
+
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.galleryPhotos)).toBe(true);
     expect(res.body.galleryPhotos.length).toBe(4);
@@ -117,13 +117,13 @@ describe.skip('Portfolio Gallery API', () => {
     ]);
   });
 
-    test('PATCH /api/portfolios/:id/gallery/reorder should reorder items', async () => {
+  test('PATCH /api/portfolios/:id/gallery/reorder should reorder items', async () => {
     const res = await request(app)
       .patch(`/api/portfolios/${user._id}/gallery/reorder`)
       .send({ from: 2, to: 0 }); // moving '4.jpg' to the top
 
-    console.log(res.body)
-  
+    console.log(res.body);
+
     expect(res.status).toBe(200);
     expect(res.body.galleryPhotos.map(p => p.url)).toEqual([
       '4.jpg', '1.jpg', '3.jpg', '5.jpg',
@@ -180,10 +180,10 @@ describe('PATCH /api/gallery/:providerId/:photoId/primary', () => {
   it('should set one photo as primary and unset others', async () => {
 
     const res = await request(app)
-      .patch(`/api/gallery/${user._id}/${photo2._id}/primary`)
+      .patch(`/api/gallery/${user._id}/${photo2._id}/primary`);
 
-    console.log(res.body)
-    
+    console.log(res.body);
+
 
     expect(res.status).toBe(200);
 
@@ -199,10 +199,10 @@ describe('PATCH /api/gallery/:providerId/:photoId/primary', () => {
   it('should move primary to another photo', async () => {
 
     const res = await request(app)
-      .patch(`/api/gallery/${user._id}/${photo1._id}/primary`)
-    
-    console.log(res.body)
-    
+      .patch(`/api/gallery/${user._id}/${photo1._id}/primary`);
+
+    console.log(res.body);
+
     expect(res.status).toBe(200);
 
     const gallery = res.body.galleryPhotos;
@@ -219,7 +219,7 @@ describe('PATCH /api/gallery/:providerId/:photoId/primary', () => {
     const fakeId = new mongoose.Types.ObjectId();
 
     const res = await request(app)
-      .patch(`/api/gallery/${user._id}/${fakeId}/primary`)
+      .patch(`/api/gallery/${user._id}/${fakeId}/primary`);
 
     expect(res.status).toBe(404);
 

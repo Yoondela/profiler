@@ -36,7 +36,7 @@ const resolveOwner = async (providerId) => {
 
 // CREATE
 const addGalleryPhotos = async (req, res) => {
-  console.log("adding to gallery...");
+  console.log('adding to gallery...');
 
   try {
     const { urls } = req.body;
@@ -204,7 +204,7 @@ const resolveOwnerWithSession = async (providerId, session) => {
 
 const setPrimaryGalleryPhoto = async (req, res) => {
   const session = await mongoose.startSession();
-  console.log(req.params)
+  console.log(req.params);
   session.startTransaction();
 
   try {
@@ -212,7 +212,7 @@ const setPrimaryGalleryPhoto = async (req, res) => {
 
     const { ownerId, ownerType } = await resolveOwnerWithSession(
       providerId,
-      session
+      session,
     );
 
     // ensure photo belongs to owner
@@ -232,14 +232,14 @@ const setPrimaryGalleryPhoto = async (req, res) => {
     await GalleryPhoto.updateMany(
       { ownerId, ownerType },
       { $set: { isPrimary: false } },
-      { session }
+      { session },
     );
 
     // set selected
     await GalleryPhoto.updateOne(
       { _id: photoId },
       { $set: { isPrimary: true } },
-      { session }
+      { session },
     );
 
     await session.commitTransaction();

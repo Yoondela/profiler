@@ -289,7 +289,7 @@ describe('GET /api/company/:companyId/members', () => {
     expect(member).toHaveProperty('name', 'Alice Photo');
     expect(member).toHaveProperty(
       'avatarUrl',
-      'https://test.com/avatar.jpg'
+      'https://test.com/avatar.jpg',
     );
   });
 

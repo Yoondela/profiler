@@ -99,7 +99,7 @@ const createCompany = async (req, res) => {
           ownerId: company._id,
           isPrimary: photo.isPrimary,
           order: photo.order,
-        }))
+        })),
       );
 
       // ✅ Attach cloned gallery

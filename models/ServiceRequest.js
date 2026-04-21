@@ -25,6 +25,7 @@ const serviceRequestSchema = mongoose.Schema({
     enum: [
       'searching',
       'accepted',
+      'pending',
       'in_progress',
       'completed',
       'cancelled',
