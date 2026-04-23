@@ -38,7 +38,7 @@ const serviceReviewSchema = new mongoose.Schema(
       maxlength: 500,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 

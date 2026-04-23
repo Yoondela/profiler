@@ -90,7 +90,7 @@ describe('Service Review Routes', () => {
         review: 'Great job',
       });
 
-    console.log("res:", res.body);
+    console.log('res:', res.body);
 
 
     expect(res.statusCode).toBe(201);
@@ -165,12 +165,12 @@ describe('Service Review Routes', () => {
         rating: 2,
       },
     ]);
-  
+
     const res = await request(app)
       .get(`/api/reviews/service/provider/${company._id}/stats`)
       .set('Authorization', auth(client));
-  
-    console.log("res:", res.body);
+
+    console.log('res:', res.body);
     expect(res.statusCode).toBe(200);
     expect(res.body.avgRating).toBeCloseTo(3);
   });

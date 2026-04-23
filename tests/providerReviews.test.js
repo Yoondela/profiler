@@ -8,10 +8,11 @@ const ProviderReview = require('../models/ProviderReview');
 const Company = require('../models/Company');
 const Portfolio = require('../models/Portfolio');
 const Service = require('../models/Service');
+const Profile = require('../models/Profile');
 
 const auth = (user) => `Bearer ${user.auth0Id}`;
 
-let client, providerUser, company, portfolio, service, completedRequest;
+let client, providerUser, company, portfolio, profile, completedRequest;
 
 // Stored (DB shape)
 const mockStoredAddress = () => ({
@@ -38,26 +39,28 @@ describe('Provider Review Routes', () => {
     await User.deleteMany({});
     await Company.deleteMany({});
     await Portfolio.deleteMany({});
-  
+    await Profile.deleteMany({});
+    await ProviderReview.deleteMany({});
+
     client = await User.create({
       name: 'Client',
       email: `client-${Date.now()}@test.com`,
       auth0Id: `auth0|client-${Date.now()}`,
     });
-  
+
     providerUser = await User.create({
       name: 'Provider',
       email: `provider-${Date.now()}@test.com`,
       auth0Id: `auth0|provider-${Date.now()}`,
     });
-  
+
     // BOTH exist → company should win
     company = await Company.create({
       owner: providerUser._id,
       address: mockStoredAddress(),
       name: 'CleanCo',
     });
-  
+
     portfolio = await Portfolio.create({
       user: providerUser._id,
       address: mockStoredAddress(),
@@ -69,50 +72,50 @@ describe('Provider Review Routes', () => {
       .post('/api/reviews/provider')
       .set('Authorization', auth(providerUser))
       .send({
-        review: 'Amazing service overall',
+        comment: 'Amazing service overall',
         rating: 5,
       });
 
-    console.log("res:", res.body);
+    console.log('res:', res.body);
 
-  
+
     expect(res.statusCode).toBe(201);
   });
 
   test('should not allow more than 3 featured reviews', async () => {
     await ProviderReview.create([
-      { 
+      {
         provider: company._id,
         isFeatured: true,
-        reviewerName: 'John Doe',
+        reviewer: client._id,
         providerModel: 'Company',
-        review: 'Top tier',
+        comment: 'Top tier',
         rating: 5,
       },
-      { 
+      {
         provider: company._id,
-        reviewerName: 'John Doe',
+        reviewer: client._id,
         providerModel: 'Company',
         isFeatured: true,
-        review: 'Excellent every time',
+        comment: 'Excellent every time',
         rating: 5,
       },
-      { 
+      {
         provider: company._id,
         isFeatured: true,
         providerModel: 'Portfolio',
-        review: 'Highly recommend',
-        reviewerName: 'John Doe',
+        comment: 'Highly recommend',
+        reviewer: client._id,
         rating: 5,
-    },
+      },
     ]);
-  
+
     const lastReview = await ProviderReview.create({
       provider: company._id,
       providerModel: 'Company',
-      review: 'Will use again',
+      comment: 'Will use again',
       rating: 5,
-      reviewerName: 'John Doe',
+      reviewer: client._id,
       isFeatured: false,
     });
 
@@ -120,8 +123,8 @@ describe('Provider Review Routes', () => {
       .patch(`/api/reviews/provider/${lastReview._id}/feature`)
       .set('Authorization', auth(providerUser))
       .send({ isFeatured: true });
-  
-    console.log("res:", res.body);
+
+    console.log('res:', res.body);
     expect(res.statusCode).toBe(400);
   });
 
@@ -130,16 +133,16 @@ describe('Provider Review Routes', () => {
       {
         provider: company._id,
         providerModel: 'Company',
-        review: 'Top tier',
+        comment: 'Top tier',
         rating: 5,
-        reviewerName: 'John Doe',
+        reviewer: client._id,
         isFeatured: true,
       },
     ]);
-  
+
     const res = await request(app)
       .get(`/api/reviews/provider/p/${company._id}`);
-  
+
     expect(res.statusCode).toBe(200);
     expect(res.body.length).toBe(1);
   });

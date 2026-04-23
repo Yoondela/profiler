@@ -65,6 +65,8 @@ exports.getPublicProvider = async (req, res) => {
 
         name: source.name || source.displayName,
 
+        id: source._id,
+
         servicesOffered: source.servicesOffered,
         otherSkills: source.otherSkills,
 

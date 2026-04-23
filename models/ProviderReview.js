@@ -6,14 +6,15 @@ const providerReviewSchema = new mongoose.Schema({
     required: true,
   },
 
-  providerModel: {
-    type: String,
-    enum: ['Portfolio', 'Company'],
+  reviewer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
   },
 
-  reviewerName: {
+  providerModel: {
     type: String,
+    enum: ['Portfolio', 'Company'],
     required: true,
   },
 
@@ -23,7 +24,7 @@ const providerReviewSchema = new mongoose.Schema({
     max: 5,
   },
 
-  review: {
+  comment: {
     type: String,
     maxlength: 500,
     required: true,

@@ -7,21 +7,17 @@ const resolveProvider = require('../utils/resolveProvider');
 const { auth } = require('express-oauth2-jwt-bearer');
 
 exports.createServiceReview = async (req, res) => {
-    
-    console.log("Creating a review..");
-    console.log("req.body:", req.body);    
-    console.log("Creating a review..");
 
-    console.log(req.auth.payload.sub);
+  console.log('Creating a review..');
 
   try {
     const { sub: auth0Id } = req.auth.payload;
-    
+
     const { serviceRequest, rating, review } = req.body;
 
     const currentUser = await User.findOne({ auth0Id });
 
-    console.log("user", currentUser);
+    console.log('user', currentUser);
 
 
     // 1. Get service request
@@ -79,7 +75,7 @@ exports.getProviderServiceReviews = async (req, res) => {
 };
 
 exports.getProviderStats = async (req, res) => {
-    console.log("Getting provider stats for providerId:", req.params.providerId);
+  console.log('Getting provider stats for providerId:', req.params.providerId);
   try {
     const { providerId } = req.params;
 

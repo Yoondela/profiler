@@ -4,38 +4,42 @@ const User = require('../models/User');
 const resolveProvider = require('../utils/resolveProvider');
 
 exports.createProviderReview = async (req, res) => {
+  console.log('Creating provider review..');
   try {
 
+    console.log('req.body:', req.body);
+    console.log('req.auth:', req.auth);
     const { sub: auth0Id } = req.auth.payload;
-    
+
     const currentUser = await User.findOne({ auth0Id });
-    
-    const { review, rating } = req.body;
+
+    const { comment, rating } = req.body;
 
     const { provider, providerModel } = await resolveProvider(currentUser._id);
 
     const newReview = await ProviderReview.create({
       provider,
+      reviewer: currentUser._id,
       providerModel,
-      reviewerName: currentUser.name || 'Anonymous',
       rating,
-      review,
+      comment,
     });
 
     res.status(201).json(newReview);
+    console.log("Successful!")
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 exports.toggleFeatureReview = async (req, res) => {
-    console.log("Toggling feature review..");
-    console.log("req.body:", req.body);    
-    console.log("req.params:", req.params);
+  console.log('Toggling feature review..');
+  console.log('req.body:', req.body);
+  console.log('req.params:', req.params);
   try {
     const { sub: auth0Id } = req.auth.payload;
     const currentUser = await User.findOne({ auth0Id });
-        
+
     const { id } = req.params;
     const { isFeatured } = req.body;
 
@@ -80,9 +84,27 @@ exports.getProviderReviews = async (req, res) => {
     const { providerId } = req.params;
 
     const reviews = await ProviderReview.find({ provider: providerId })
+      .populate({
+        path: 'reviewer',
+        select: 'name',
+        populate: {
+          path: 'profile',
+          select: 'avatarUrl',
+        },
+      })
       .sort({ isFeatured: -1, createdAt: -1 });
 
-    res.status(200).json(reviews);
+      const formatted = reviews.map(r => ({
+        ...r.toObject(),
+        reviewer: {
+          _id: r.reviewer._id,
+          name: r.reviewer.name,
+          avatarUrl: r.reviewer.profile?.avatarUrl || null,
+        },
+      }));
+
+
+    res.status(200).json(formatted);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

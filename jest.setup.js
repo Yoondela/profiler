@@ -24,13 +24,18 @@ jest.mock('express-oauth2-jwt-bearer', () => {
 beforeAll(async () => {
   const mongoose = require('mongoose');
   if (mongoose.connection.readyState === 0) {
-    const conn = await mongoose.connect(process.env.MONGO_URI_TEST, {
-    });
-    console.log(`MongoDB Connected for tests: ${conn.connection.host}`);
+    try {
+      const conn = await mongoose.connect(process.env.MONGO_URI_TEST, {});
+      console.log(`MongoDB Connected for tests: ${conn.connection.host}`);
+    } catch (err) {
+      console.warn(`Skipping test DB connection: ${err.message}`);
+    }
   }
 });
 
 afterAll(async () => {
   const mongoose = require('mongoose');
-  await mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
 });
