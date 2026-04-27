@@ -4,12 +4,15 @@ const Profile = require('../models/Profile');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
 const GalleryPhoto = require('../models/GalleryPhoto');
+const ProviderReview = require('../models/ProviderReview');
 
 exports.getPublicProvider = async (req, res) => {
   console.log('Getting public provider profile..');
 
   try {
     const { id } = req.params;
+
+    console.log('Looking up provider with id:', id);
 
     const user = await User.findById(id);
     if (!user || !user.roles.includes('provider')) {
@@ -47,6 +50,33 @@ exports.getPublicProvider = async (req, res) => {
       .select('url order isPrimary')
       .lean();
 
+
+    // use aggregation SOON!!!
+    const reviews = await ProviderReview.find({
+      provider: source._id,
+      providerModel: ownerType,
+    })
+      .populate({
+        path: 'reviewer',
+        select: 'name',
+        populate: {
+          path: 'profile',
+          select: 'avatarUrl',
+        },
+      })
+      .sort({ isFeatured: -1, createdAt: -1 });
+
+    const formattedReviews = reviews.map(r => ({
+      ...r.toObject(),
+      reviewer: {
+        _id: r.reviewer._id,
+        name: r.reviewer.name,
+        avatarUrl: r.reviewer.profile?.avatarUrl || null,
+      },
+    }));
+
+
+
     return res.status(200).json({
       user: {
         email: user.email,
@@ -75,6 +105,8 @@ exports.getPublicProvider = async (req, res) => {
 
         // ✅ FIXED
         galleryPhotos,
+
+        review: formattedReviews,
 
         address: {
           city: source?.address?.addressComponents?.city,

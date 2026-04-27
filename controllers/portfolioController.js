@@ -1,32 +1,113 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Company = require('../models/Company');
+const Profile = require('../models/Profile');
+const GalleryPhoto = require('../models/GalleryPhoto');
+const ProviderReview = require('../models/ProviderReview');
 
 const getPortfolio = async (req, res) => {
   console.log('Getting Portfolio');
 
   try {
-    const providerId = req.params.providerId;
+    const { providerId } = req.params;
 
-    const portfolio = await Portfolio.findOne({ user: providerId })
-      .populate({
-        path: 'user',
-        populate: {
-          path: 'profile',
-          model: 'Profile',
-        },
-      })
-      .populate('company')
-      .populate('servicesOffered');
+    console.log('providerId:', providerId);
+    console.log('req.params:', req.params);
 
-    if (!portfolio) {
+    const user = await User.findById(providerId);
+    if (!user || !user.roles.includes('provider')) {
       return res.status(404).json({ message: 'Provider not found' });
     }
 
+    const portfolio = await Portfolio.findOne({ user: providerId })
+      .populate('servicesOffered');
+
     console.log(portfolio);
 
-    console.log('Successfull!');
-    return res.status(200).json(portfolio);
+    const company = await Company.findOne({ owner: providerId })
+      .populate('members')
+      .populate('servicesOffered');
+
+    console.log(company);
+
+    // company takes precedence
+    const source = company || portfolio;
+    const ownerType = company ? 'Company' : 'Portfolio';
+
+    // ✅ Fetch real gallery
+    const galleryPhotos = await GalleryPhoto.find({
+      ownerId: source._id,
+      ownerType,
+    })
+      .sort('order')
+      .select('url order isPrimary')
+      .lean();
+
+
+    // use aggregation SOON!!!
+    const reviews = await ProviderReview.find({
+      provider: source._id,
+      providerModel: ownerType,
+    })
+      .populate({
+        path: 'reviewer',
+        select: 'name',
+        populate: {
+          path: 'profile',
+          select: 'avatarUrl',
+        },
+      })
+      .sort({ isFeatured: -1, createdAt: -1 });
+
+    const formattedReviews = reviews.map(r => ({
+      ...r.toObject(),
+      reviewer: {
+        _id: r.reviewer._id,
+        name: r.reviewer.name,
+        avatarUrl: r.reviewer.profile?.avatarUrl || null,
+      },
+    }));
+    console.log('Successful!');
+
+    return res.status(200).json({
+
+      portfolio: {
+        type: company ? 'company' : 'individual',
+
+        name: source.name || source.displayName,
+
+        id: source._id,
+
+        servicesOffered: source.servicesOffered,
+        otherSkills: source.otherSkills,
+
+        logoUrl: source.logoUrl,
+        bannerUrl: source.bannerUrl,
+
+        // ✅ FIXED
+        galleryPhotos,
+
+        review: formattedReviews,
+
+        address: {
+          city: source?.address?.addressComponents?.city,
+          suburb: source?.address?.addressComponents?.suburb,
+        },
+
+        about: source.about || source.bio,
+
+        rating: source.rating,
+        completedJobs: source.completedJobs,
+        becameProviderAt: source.createdAt,
+      },
+
+      ...(company && {
+        company: {
+          name: company.name,
+          members: company.members,
+        },
+      }),
+    });
 
   } catch (err) {
     console.error(err);
@@ -40,6 +121,9 @@ const updatePortfolio = async (req, res) => {
   try {
     const { providerId } = req.params;
     const updates = req.body;
+
+    console.log('providerId:', providerId);
+    console.log('updates:', updates);
 
     const portfolio = await Portfolio.findOne({ user: providerId });
     if (!portfolio) {
@@ -71,6 +155,8 @@ const updatePortfolio = async (req, res) => {
     });
 
     await target.save();
+
+    console.log('Successful!');
 
     return res.status(200).json({
       type: company ? 'company' : 'portfolio',

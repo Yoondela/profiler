@@ -15,6 +15,12 @@ const bookmarkSchema = new mongoose.Schema(
       refPath: 'targetType',
     },
 
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      // required: true,
+      refPath: 'User', // can be either company owner or portfolio user
+    },
+
     targetType: {
       type: String,
       required: true,

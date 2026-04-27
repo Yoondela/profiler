@@ -2,6 +2,7 @@ const bookmarkService = require('../utils/bookmarkService');
 const User = require('../models/User');
 
 const getUserId = async (req) => {
+  
   try {
     const auth0Id = req?.auth?.payload?.sub;
     if (!auth0Id) {
@@ -20,6 +21,10 @@ const getUserId = async (req) => {
 };
 
 const toggleBookmark = async (req, res) => {
+  console.log('Toggling bookmark..');
+
+  console.log('Request body:', req.body);
+
   try {
     const clientId = await getUserId(req);
 
@@ -36,32 +41,40 @@ const toggleBookmark = async (req, res) => {
 };
 
 const getBookmarks = async (req, res) => {
-
+  console.log('Getting bookmarks..');
   try {
     const clientId = await getUserId(req);
     const result = await bookmarkService.getBookmarks(
       clientId,
     );
 
+    console.log('Bookmarks retrieved:', result);
+
     res.status(200).json(result);
+    console.log("Successful!")
   } catch (err) {
     handleError(res, err);
   }
 };
 
 const deleteBookmark = async (req, res) => {
-
+  console.log('Deleting bookmark..');
   try {
     const clientId = await getUserId(req);
+
+    console.log('cleint:', clientId);
+    console.log('provider:', req.params);
+
     const result = await bookmarkService.removeBookmark(
       clientId,
-      req.body.providerId,
+      req.params.providerId,
     );
 
     res.status(200).json(result);
   } catch (err) {
     handleError(res, err);
   }
+  console.log('Successful!');
 };
 
 const handleError = (res, err) => {

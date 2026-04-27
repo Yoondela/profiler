@@ -72,12 +72,14 @@ describe('Portfolio API', () => {
     const res = await request(app)
       .get(`/api/portfolios/${user._id}`);
 
+    console.log('res:', res.body);
+
     expect(res.statusCode).toBe(200);
 
-    const services = res.body.servicesOffered.map(s => s.slug);
+    const services = res.body.portfolio.servicesOffered.map(s => s.slug);
 
     expect(services).toContain('gardening');
-    expect(res.body.rating).toBe(4.7);
+    expect(res.body.portfolio.rating).toBe(4.7);
 
   });
 

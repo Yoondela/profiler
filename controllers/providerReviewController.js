@@ -26,7 +26,7 @@ exports.createProviderReview = async (req, res) => {
     });
 
     res.status(201).json(newReview);
-    console.log("Successful!")
+    console.log('Successful!');
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -94,14 +94,14 @@ exports.getProviderReviews = async (req, res) => {
       })
       .sort({ isFeatured: -1, createdAt: -1 });
 
-      const formatted = reviews.map(r => ({
-        ...r.toObject(),
-        reviewer: {
-          _id: r.reviewer._id,
-          name: r.reviewer.name,
-          avatarUrl: r.reviewer.profile?.avatarUrl || null,
-        },
-      }));
+    const formatted = reviews.map(r => ({
+      ...r.toObject(),
+      reviewer: {
+        _id: r.reviewer._id,
+        name: r.reviewer.name,
+        avatarUrl: r.reviewer.profile?.avatarUrl || null,
+      },
+    }));
 
 
     res.status(200).json(formatted);
